@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'second_page.dart';
 import 'print_page.dart';
-import 'dynamic_form.dart';
+import 'package:dynamicform/features/form/dynamic_form.dart';
+
 
 void main() {
   runApp(const MyApp());

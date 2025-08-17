@@ -35,6 +35,8 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   charset_converter: ^2.3.0
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.9.0   # nên nâng cấp bản mới nhất
 
 dev_dependencies:
   flutter_test:
@@ -54,6 +56,13 @@ dev_dependencies:
   diacritic: ^0.1.3
   charset_converter: ^2.0.0
 
+  build_runner: ^2.4.7
+  freezed: ^3.1.0
+  freezed_lint: ^0.0.10
+  flutter_dotenv: ^5.2.1
+  shared_preferences: ^2.5.3
+  json_serializable: ^6.7.1   # thêm dòng này vào
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -64,6 +73,12 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/icons/
+    - assets/images/demo/
+    - assets/images/theme/
+    - assets/config/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
