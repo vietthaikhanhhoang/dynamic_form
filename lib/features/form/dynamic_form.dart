@@ -138,15 +138,15 @@ class _dynamic_formState extends State<dynamic_form> {
         final data = jsonDecode(response.body);
         final items = data['data']['items'] as List<dynamic>;
         if (items.isNotEmpty) {
-          final firstProvinceId = items.first['id'].toString();
+          //final firstProvinceId = items.first['id'].toString();
           setState(() {
             _provinces = items
                 .map<FormFieldOption>((e) =>
                 FormFieldOption(value: e['id'].toString(), label: e['name'].toString()))
                 .toList();
-            _singleValues['province'] = firstProvinceId; // default
+            //_singleValues['province'] = firstProvinceId; // default
           });
-          await loadWards(firstProvinceId);
+          //await loadWards(firstProvinceId);
         }
       } else {
         debugPrint('Lấy provinces thất bại: ${response.statusCode}');
@@ -156,32 +156,80 @@ class _dynamic_formState extends State<dynamic_form> {
     }
   }
 
-  Future<void> loadWards(String provinceCode) async {
+  // Future<void> loadWards(String provinceCode, String nameFieldDependent) async {
+  //   try {
+  //     final res = await getWards(provinceCode: provinceCode);
+  //     if (res.statusCode == 200) {
+  //       final data = jsonDecode(res.body);
+  //       if (data['status'] == 'success' &&
+  //           data['data'] is Map &&
+  //           data['data']['items'] is List) {
+  //         final wardsList = data['data']['items'] as List;
+  //         if (wardsList.isNotEmpty) {
+  //           setState(() {
+  //             _wards = wardsList
+  //                 .map<FormFieldOption>((e) =>
+  //                 FormFieldOption(value: e['code'].toString(), label: e['name'].toString()))
+  //                 .toList();
+  //             //_singleValues['ward'] = _wards.first.value;
+  //             print("ok");
+  //           });
+  //         } else {
+  //           debugPrint('Không có dữ liệu wards cho provinceCode: $provinceCode');
+  //         }
+  //       } else {
+  //         debugPrint('Dữ liệu wards không hợp lệ: $data');
+  //       }
+  //     } else {
+  //       debugPrint('Lỗi load wards: ${res.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     debugPrint('Exception load wards: $e');
+  //   }
+  // }
+
+  Future<void> loadWards(String provinceCode, String nameFieldDependent) async {
     try {
       final res = await getWards(provinceCode: provinceCode);
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        if (data['status'] == 'success' &&
-            data['data'] is Map &&
-            data['data']['items'] is List) {
-          final wardsList = data['data']['items'] as List;
-          if (wardsList.isNotEmpty) {
-            setState(() {
-              _wards = wardsList
-                  .map<FormFieldOption>((e) =>
-                  FormFieldOption(value: e['code'].toString(), label: e['name'].toString()))
-                  .toList();
-              _singleValues['ward'] = _wards.first.value;
-            });
-          } else {
-            debugPrint('Không có dữ liệu wards cho provinceCode: $provinceCode');
-          }
-        } else {
-          debugPrint('Dữ liệu wards không hợp lệ: $data');
-        }
-      } else {
+      if (res.statusCode != 200) {
         debugPrint('Lỗi load wards: ${res.statusCode}');
+        return;
       }
+
+      final data = jsonDecode(res.body);
+      if (data['status'] != 'success' ||
+          data['data'] is! Map ||
+          data['data']['items'] is! List) {
+        debugPrint('Dữ liệu wards không hợp lệ: $data');
+        return;
+      }
+
+      final wardsList = data['data']['items'] as List;
+      if (wardsList.isEmpty) {
+        debugPrint('Không có dữ liệu wards cho provinceCode: $provinceCode');
+        return;
+      }
+
+      // Chuyển wardsList thành List<FormFieldOption>
+      final wardOptions = wardsList.map<FormFieldOption>((e) => FormFieldOption(
+        value: e['code'].toString(),
+        label: e['name'].toString(),
+      )).toList();
+
+      // Cập nhật _formRequest.data với copyWith
+      setState(() {
+        _formRequest = _formRequest?.copyWith(
+          data: _formRequest?.data?.map((f) {
+            if (f.type == 'ward' && f.nameFieldDependent == nameFieldDependent) {
+              return f.copyWith(options: wardOptions);
+            }
+            return f; // giữ nguyên các field khác
+          }).toList(),
+        );
+      });
+
+      debugPrint("Wards loaded for $nameFieldDependent");
+
     } catch (e) {
       debugPrint('Exception load wards: $e');
     }
@@ -713,19 +761,29 @@ class _dynamic_formState extends State<dynamic_form> {
       options: _provinces,
       onChanged: (selectedProvinceCode) {
         if (selectedProvinceCode != null && selectedProvinceCode.isNotEmpty) {
-          loadWards(selectedProvinceCode);
+          loadWards(selectedProvinceCode, name);
         }
       },
       labelMinHeight: labelMinHeight,
     );
   }
 
+  // Widget _buildWard(FormFieldEntity f, {double? labelMinHeight}) {
+  //   final name = f.name!;
+  //   return _buildDropdownLike(
+  //     f: f,
+  //     name: name,
+  //     options: _wards,
+  //     labelMinHeight: labelMinHeight,
+  //   );
+  // }
+
   Widget _buildWard(FormFieldEntity f, {double? labelMinHeight}) {
     final name = f.name!;
     return _buildDropdownLike(
       f: f,
       name: name,
-      options: _wards,
+      options: f.options ?? [], // <-- dùng options riêng của field
       labelMinHeight: labelMinHeight,
     );
   }

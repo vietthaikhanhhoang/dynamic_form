@@ -24,6 +24,7 @@ _FormFieldEntity _$FormFieldEntityFromJson(Map<String, dynamic> json) =>
       valueIsArray: json['valueIsArray'] as bool?,
       row: (json['row'] as num?)?.toInt(),
       max: (json['max'] as num?)?.toInt(),
+      nameFieldDependent: json['nameFieldDependent'] as String?,
     );
 
 Map<String, dynamic> _$FormFieldEntityToJson(_FormFieldEntity instance) =>
@@ -41,6 +42,7 @@ Map<String, dynamic> _$FormFieldEntityToJson(_FormFieldEntity instance) =>
       'valueIsArray': instance.valueIsArray,
       'row': instance.row,
       'max': instance.max,
+      'nameFieldDependent': instance.nameFieldDependent,
     };
 
 _FormFieldOption _$FormFieldOptionFromJson(Map<String, dynamic> json) =>

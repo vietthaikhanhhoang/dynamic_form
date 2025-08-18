@@ -21,6 +21,9 @@ abstract class FormFieldEntity with _$FormFieldEntity {
     @JsonKey(name: 'valueIsArray') bool? valueIsArray,
     @JsonKey(name: 'row') int? row,
     @JsonKey(name: 'max') int? max,
+
+    // 👇 Bổ sung field này
+    @JsonKey(name: 'nameFieldDependent') String? nameFieldDependent,
   }) = _FormFieldEntity;
 
   factory FormFieldEntity.fromJson(Map<String, Object?> json) =>
