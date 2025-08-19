@@ -12,7 +12,7 @@ abstract class Province with _$Province {
   const factory Province({
     @JsonKey(name: 'id') int? id,
     @JsonKey(name: 'name') String? name,
-    @JsonKey(name: 'code') int? code,
+    @JsonKey(name: 'code') String? code,
     @JsonKey(name: 'type') String? type,
     @JsonKey(name: 'country_id') int? countryId,
     @JsonKey(name: 'sort_order') int? sortOrder,

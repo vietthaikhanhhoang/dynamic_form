@@ -9,7 +9,7 @@ part of 'province.entity.dart';
 _Province _$ProvinceFromJson(Map<String, dynamic> json) => _Province(
   id: (json['id'] as num?)?.toInt(),
   name: json['name'] as String?,
-  code: (json['code'] as num?)?.toInt(),
+  code: json['code'] as String?,
   type: json['type'] as String?,
   countryId: (json['country_id'] as num?)?.toInt(),
   sortOrder: (json['sort_order'] as num?)?.toInt(),

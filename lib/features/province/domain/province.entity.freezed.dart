@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Province implements DiagnosticableTreeMixin {
 
-@JsonKey(name: 'id') int? get id;@JsonKey(name: 'name') String? get name;@JsonKey(name: 'code') int? get code;@JsonKey(name: 'type') String? get type;@JsonKey(name: 'country_id') int? get countryId;@JsonKey(name: 'sort_order') int? get sortOrder;@JsonKey(name: 'zip_code') String? get zipCode;@JsonKey(name: 'phone_code') String? get phoneCode;@JsonKey(name: 'is_status') int? get isStatus;
+@JsonKey(name: 'id') int? get id;@JsonKey(name: 'name') String? get name;@JsonKey(name: 'code') String? get code;@JsonKey(name: 'type') String? get type;@JsonKey(name: 'country_id') int? get countryId;@JsonKey(name: 'sort_order') int? get sortOrder;@JsonKey(name: 'zip_code') String? get zipCode;@JsonKey(name: 'phone_code') String? get phoneCode;@JsonKey(name: 'is_status') int? get isStatus;
 /// Create a copy of Province
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -54,7 +54,7 @@ abstract mixin class $ProvinceCopyWith<$Res>  {
   factory $ProvinceCopyWith(Province value, $Res Function(Province) _then) = _$ProvinceCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'id') int? id,@JsonKey(name: 'name') String? name,@JsonKey(name: 'code') int? code,@JsonKey(name: 'type') String? type,@JsonKey(name: 'country_id') int? countryId,@JsonKey(name: 'sort_order') int? sortOrder,@JsonKey(name: 'zip_code') String? zipCode,@JsonKey(name: 'phone_code') String? phoneCode,@JsonKey(name: 'is_status') int? isStatus
+@JsonKey(name: 'id') int? id,@JsonKey(name: 'name') String? name,@JsonKey(name: 'code') String? code,@JsonKey(name: 'type') String? type,@JsonKey(name: 'country_id') int? countryId,@JsonKey(name: 'sort_order') int? sortOrder,@JsonKey(name: 'zip_code') String? zipCode,@JsonKey(name: 'phone_code') String? phoneCode,@JsonKey(name: 'is_status') int? isStatus
 });
 
 
@@ -76,7 +76,7 @@ class _$ProvinceCopyWithImpl<$Res>
 id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int?,name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String?,code: freezed == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
-as int?,type: freezed == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as String?,type: freezed == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as String?,countryId: freezed == countryId ? _self.countryId : countryId // ignore: cast_nullable_to_non_nullable
 as int?,sortOrder: freezed == sortOrder ? _self.sortOrder : sortOrder // ignore: cast_nullable_to_non_nullable
 as int?,zipCode: freezed == zipCode ? _self.zipCode : zipCode // ignore: cast_nullable_to_non_nullable
@@ -167,7 +167,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'id')  int? id, @JsonKey(name: 'name')  String? name, @JsonKey(name: 'code')  int? code, @JsonKey(name: 'type')  String? type, @JsonKey(name: 'country_id')  int? countryId, @JsonKey(name: 'sort_order')  int? sortOrder, @JsonKey(name: 'zip_code')  String? zipCode, @JsonKey(name: 'phone_code')  String? phoneCode, @JsonKey(name: 'is_status')  int? isStatus)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'id')  int? id, @JsonKey(name: 'name')  String? name, @JsonKey(name: 'code')  String? code, @JsonKey(name: 'type')  String? type, @JsonKey(name: 'country_id')  int? countryId, @JsonKey(name: 'sort_order')  int? sortOrder, @JsonKey(name: 'zip_code')  String? zipCode, @JsonKey(name: 'phone_code')  String? phoneCode, @JsonKey(name: 'is_status')  int? isStatus)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Province() when $default != null:
 return $default(_that.id,_that.name,_that.code,_that.type,_that.countryId,_that.sortOrder,_that.zipCode,_that.phoneCode,_that.isStatus);case _:
@@ -188,7 +188,7 @@ return $default(_that.id,_that.name,_that.code,_that.type,_that.countryId,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'id')  int? id, @JsonKey(name: 'name')  String? name, @JsonKey(name: 'code')  int? code, @JsonKey(name: 'type')  String? type, @JsonKey(name: 'country_id')  int? countryId, @JsonKey(name: 'sort_order')  int? sortOrder, @JsonKey(name: 'zip_code')  String? zipCode, @JsonKey(name: 'phone_code')  String? phoneCode, @JsonKey(name: 'is_status')  int? isStatus)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'id')  int? id, @JsonKey(name: 'name')  String? name, @JsonKey(name: 'code')  String? code, @JsonKey(name: 'type')  String? type, @JsonKey(name: 'country_id')  int? countryId, @JsonKey(name: 'sort_order')  int? sortOrder, @JsonKey(name: 'zip_code')  String? zipCode, @JsonKey(name: 'phone_code')  String? phoneCode, @JsonKey(name: 'is_status')  int? isStatus)  $default,) {final _that = this;
 switch (_that) {
 case _Province():
 return $default(_that.id,_that.name,_that.code,_that.type,_that.countryId,_that.sortOrder,_that.zipCode,_that.phoneCode,_that.isStatus);case _:
@@ -208,7 +208,7 @@ return $default(_that.id,_that.name,_that.code,_that.type,_that.countryId,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'id')  int? id, @JsonKey(name: 'name')  String? name, @JsonKey(name: 'code')  int? code, @JsonKey(name: 'type')  String? type, @JsonKey(name: 'country_id')  int? countryId, @JsonKey(name: 'sort_order')  int? sortOrder, @JsonKey(name: 'zip_code')  String? zipCode, @JsonKey(name: 'phone_code')  String? phoneCode, @JsonKey(name: 'is_status')  int? isStatus)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'id')  int? id, @JsonKey(name: 'name')  String? name, @JsonKey(name: 'code')  String? code, @JsonKey(name: 'type')  String? type, @JsonKey(name: 'country_id')  int? countryId, @JsonKey(name: 'sort_order')  int? sortOrder, @JsonKey(name: 'zip_code')  String? zipCode, @JsonKey(name: 'phone_code')  String? phoneCode, @JsonKey(name: 'is_status')  int? isStatus)?  $default,) {final _that = this;
 switch (_that) {
 case _Province() when $default != null:
 return $default(_that.id,_that.name,_that.code,_that.type,_that.countryId,_that.sortOrder,_that.zipCode,_that.phoneCode,_that.isStatus);case _:
@@ -228,7 +228,7 @@ class _Province with DiagnosticableTreeMixin implements Province {
 
 @override@JsonKey(name: 'id') final  int? id;
 @override@JsonKey(name: 'name') final  String? name;
-@override@JsonKey(name: 'code') final  int? code;
+@override@JsonKey(name: 'code') final  String? code;
 @override@JsonKey(name: 'type') final  String? type;
 @override@JsonKey(name: 'country_id') final  int? countryId;
 @override@JsonKey(name: 'sort_order') final  int? sortOrder;
@@ -275,7 +275,7 @@ abstract mixin class _$ProvinceCopyWith<$Res> implements $ProvinceCopyWith<$Res>
   factory _$ProvinceCopyWith(_Province value, $Res Function(_Province) _then) = __$ProvinceCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'id') int? id,@JsonKey(name: 'name') String? name,@JsonKey(name: 'code') int? code,@JsonKey(name: 'type') String? type,@JsonKey(name: 'country_id') int? countryId,@JsonKey(name: 'sort_order') int? sortOrder,@JsonKey(name: 'zip_code') String? zipCode,@JsonKey(name: 'phone_code') String? phoneCode,@JsonKey(name: 'is_status') int? isStatus
+@JsonKey(name: 'id') int? id,@JsonKey(name: 'name') String? name,@JsonKey(name: 'code') String? code,@JsonKey(name: 'type') String? type,@JsonKey(name: 'country_id') int? countryId,@JsonKey(name: 'sort_order') int? sortOrder,@JsonKey(name: 'zip_code') String? zipCode,@JsonKey(name: 'phone_code') String? phoneCode,@JsonKey(name: 'is_status') int? isStatus
 });
 
 
@@ -297,7 +297,7 @@ class __$ProvinceCopyWithImpl<$Res>
 id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int?,name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String?,code: freezed == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
-as int?,type: freezed == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as String?,type: freezed == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as String?,countryId: freezed == countryId ? _self.countryId : countryId // ignore: cast_nullable_to_non_nullable
 as int?,sortOrder: freezed == sortOrder ? _self.sortOrder : sortOrder // ignore: cast_nullable_to_non_nullable
 as int?,zipCode: freezed == zipCode ? _self.zipCode : zipCode // ignore: cast_nullable_to_non_nullable

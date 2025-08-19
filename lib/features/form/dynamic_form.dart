@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:dynamicform/features/form/widgets/formgeneral.dart';
+import 'package:dynamicform/features/ward/domain/ward.entity.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
@@ -25,6 +26,9 @@ class dynamic_form extends StatefulWidget {
 class _dynamic_formState extends State<dynamic_form> {
   // ====== FORM STATE (type-safe) ======
   FormRequest? _formRequest;
+
+  List<FormFieldEntity> _selectedProvinces = [];
+  List<FormFieldEntity> _selectedWards = [];
 
   // ====== STATE MAPS ======
   final Map<String, TextEditingController> _textCtrls = {};
@@ -96,6 +100,7 @@ class _dynamic_formState extends State<dynamic_form> {
 
           setState(() {
             _formRequest = formRequest;
+            loadProvinces();
           });
 
           _initControllersFromSpec(); // init theo spec đã load
@@ -142,15 +147,33 @@ class _dynamic_formState extends State<dynamic_form> {
         final data = jsonDecode(response.body);
         final items = data['data']['items'] as List<dynamic>;
         if (items.isNotEmpty) {
-          //final firstProvinceId = items.first['id'].toString();
           setState(() {
             _provinces = items
-                .map<FormFieldOption>((e) =>
-                FormFieldOption(value: e['id'], label: e['name'].toString()))
+                .map<FormFieldOption>((e) => FormFieldOption(
+              value: e['id'].toString(),
+              label: e['name'].toString(),
+            ))
                 .toList();
-            //_singleValues['province'] = firstProvinceId; // default
           });
-          //await loadWards(firstProvinceId);
+
+          final provinceFields = _spec.where((f) => f.type == 'province');
+
+          //Lấy giá trị của chúng (nếu có) và lưu vào mảng
+          // List _selectedProvinces = provinceFields
+          //     .where((f) => f.value != null && f.value!.isNotEmpty)
+          //     .map((f) => f.value!)
+          //     .toList();
+          _selectedProvinces = provinceFields
+              .where((f) => "2" != null && "2"!.isNotEmpty)
+              .toList();
+
+
+          for (final provinceField in _selectedProvinces) {
+            final provinceCode = "2"; // hoặc provinceField.value nếu không fake
+            final nameFieldDependent = provinceField.name!;
+
+            await loadWards(provinceCode, nameFieldDependent);
+          }
         }
       } else {
         debugPrint('Lấy provinces thất bại: ${response.statusCode}');
@@ -159,6 +182,7 @@ class _dynamic_formState extends State<dynamic_form> {
       debugPrint('Lỗi khi load provinces: $e');
     }
   }
+
 
   Future<void> loadWards(String provinceCode, String nameFieldDependent) async {
     try {
@@ -182,22 +206,33 @@ class _dynamic_formState extends State<dynamic_form> {
         return;
       }
 
+      _selectedWards = _spec
+          // .where((f) => f.type == 'ward' && f.value != null)
+          .where((f) => f.type == 'ward')
+          .toList();
+      print("ok");
+      print("oh yeal");
+
+      //Lấy giá trị của chúng (nếu có) và lưu vào mảng
+      // List _selectedProvinces = provinceFields
+      //     .where((f) => f.value != null && f.value!.isNotEmpty)
+      //     .map((f) => f.value!)
+      //     .toList();
+      // _selectedProvinces = provinceFields
+      //     .where((f) => "2" != null && "2"!.isNotEmpty)
+      //     .toList();
+
       // Chuyển wardsList thành List<FormFieldOption>
       final wardOptions = wardsList.map<FormFieldOption>((e) => FormFieldOption(
-        value: e['code'],
-        label: e['name'],
+        value: e['code'].toString(),
+        label: e['name']
       )).toList();
+
+      // Gán _wards
+      _wards = wardOptions;
 
       // Cập nhật _formRequest.data với copyWith
       setState(() {
-        _formRequest = _formRequest?.copyWith(
-          data: _formRequest?.data?.map((f) {
-            if (f.type == 'ward' && f.nameFieldDependent == nameFieldDependent) {
-              return f.copyWith(options: wardOptions);
-            }
-            return f; // giữ nguyên các field khác
-          }).toList(),
-        );
       });
 
       debugPrint("Wards loaded for $nameFieldDependent");
@@ -206,6 +241,7 @@ class _dynamic_formState extends State<dynamic_form> {
       debugPrint('Exception load wards: $e');
     }
   }
+
 
   // ====== INIT CONTROLLERS/STATE (typed) ======
   void _initControllersFromSpec() {
@@ -494,8 +530,8 @@ class _dynamic_formState extends State<dynamic_form> {
     return _buildDropdownLike(
       f: f,
       name: name,
-      options: f.options ?? [], // <-- dùng options riêng của field
-      initialValue: null,
+      options: _wards,
+      initialValue: "22113002",
       labelMinHeight: labelMinHeight,
     );
   }
@@ -937,7 +973,6 @@ class _dynamic_formState extends State<dynamic_form> {
   void initState() {
     super.initState();
     loadFormRequest("345cd9d1-0b4a-4089-8c5e-1ef882d18019");
-    loadProvinces();
   }
 
   @override

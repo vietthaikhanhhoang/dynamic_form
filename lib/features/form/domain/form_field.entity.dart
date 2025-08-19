@@ -35,7 +35,7 @@ abstract class FormFieldEntity with _$FormFieldEntity {
 @freezed
 abstract class FormFieldOption with _$FormFieldOption {
   const factory FormFieldOption({
-    @JsonKey(name: 'value') dynamic? value,
+    @JsonKey(name: 'value') dynamic value,
     @JsonKey(name: 'label') String? label,
     @JsonKey(name: 'isExtraOption') bool? isExtraOption,
   }) = _FormFieldOption;
