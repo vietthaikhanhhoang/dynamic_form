@@ -910,7 +910,7 @@ class _dynamic_formState extends State<dynamic_form> {
           loadWards(selectedProvinceCode, name);
         }
       },
-      initialValue: null,
+      initialValue: "2", //dang fix cung f.value
       labelMinHeight: labelMinHeight,
     );
   }
