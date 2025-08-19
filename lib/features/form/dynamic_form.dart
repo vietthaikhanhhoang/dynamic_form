@@ -941,9 +941,9 @@ class _dynamic_formState extends State<dynamic_form> {
     final int max = (f.max != null && f.max! > 0) ? f.max! : 5;
     const double size = 120;
 
-    // Lấy giá trị URL cũ nếu có
+    // Giá trị URL cũ (String) từ f.value
     final List<String> existingUrls = (f.value is List)
-        ? List<String>.from(f.value!)
+        ? List<String>.from(f.value!.whereType<String>())
         : [];
 
     Future<void> _chooseSourceAndPick() async {
@@ -966,13 +966,21 @@ class _dynamic_formState extends State<dynamic_form> {
           ),
         ),
       );
+
       if (source != null) {
         final file = await _pickImageFrom(source);
         if (file != null) {
           setState(() {
             _imageArrays[name]!.add(file);
-            // Cập nhật luôn f.value
-            f = f.copyWith(value: [...existingUrls, ..._imageArrays[name]!]);
+            // f.value chỉ giữ URL cũ, không gộp File vào
+            _formRequest = _formRequest?.copyWith(
+              data: _formRequest?.data?.map((field) {
+                if (field.name == name && field.type == 'image') {
+                  return field.copyWith(value: existingUrls);
+                }
+                return field;
+              }).toList(),
+            );
           });
         }
       }
@@ -1031,8 +1039,15 @@ class _dynamic_formState extends State<dynamic_form> {
                     } else {
                       existingUrls.removeAt(idx!);
                     }
-                    // Cập nhật lại f.value sau khi xóa
-                    f = f.copyWith(value: [...existingUrls, ..._imageArrays[name]!]);
+                    // f.value chỉ giữ URL còn lại, không chứa File
+                    _formRequest = _formRequest?.copyWith(
+                      data: _formRequest?.data?.map((field) {
+                        if (field.name == name && field.type == 'image') {
+                          return field.copyWith(value: existingUrls);
+                        }
+                        return field;
+                      }).toList(),
+                    );
                   });
                 },
                 child: const Padding(
@@ -1072,8 +1087,6 @@ class _dynamic_formState extends State<dynamic_form> {
       ],
     );
   }
-
-
 
   Widget _buildSignature(FormFieldEntity f) {
     Uint8List? existingSignature;
@@ -1118,7 +1131,8 @@ class _dynamic_formState extends State<dynamic_form> {
                           onPressed: () {
                             setState(() {
                               _signatureController.clear();
-                              f = f.copyWith(value: null);
+                              f = f.copyWith(value: null);       // Xoá chữ ký cũ
+                              existingSignature = null;          // Xoá hiển thị cũ luôn
                             });
                           },
                         ),
