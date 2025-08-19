@@ -1,6 +1,7 @@
 // giữ nguyên tên file / class: dynamic_form
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
@@ -266,7 +267,7 @@ class _dynamic_formState extends State<dynamic_form> {
       switch (type) {
         case 'text':
         case 'textarea':
-          _textCtrls[name] = TextEditingController();
+          _textCtrls[name] ??= TextEditingController(text: f.value?.toString());
           break;
         case 'date':
           _dateValues[name] = null;
@@ -309,8 +310,7 @@ class _dynamic_formState extends State<dynamic_form> {
           _imageArrays[name] = <File>[];
           break;
         case 'signature':
-        // đã có _signatureController
-          break;
+           break;
         default:
           break;
       }
@@ -558,6 +558,12 @@ class _dynamic_formState extends State<dynamic_form> {
   Widget _buildTextarea(FormFieldEntity f, {double? labelMinHeight}) {
     final name = f.name!;
     final rows = (f.row != null && f.row! > 0) ? f.row! : 3;
+
+    // Khởi tạo controller nếu chưa có
+    if (_textCtrls[name] == null) {
+      _textCtrls[name] = TextEditingController(text: f.value?.toString());
+    }
+
     return _wrapWithLabel(
       _labelWithRequired(f),
       TextField(
@@ -566,10 +572,14 @@ class _dynamic_formState extends State<dynamic_form> {
         maxLines: rows + 2,
         decoration: _inputDecoration(null),
         style: const TextStyle(fontSize: 14),
+        onChanged: (val) {
+          _textCtrls[name]?.text = val;
+        },
       ),
       labelMinHeight: labelMinHeight,
     );
   }
+
 
   Widget _buildDate(FormFieldEntity f, {double? labelMinHeight}) {
     final name = f.name!;
@@ -926,11 +936,15 @@ class _dynamic_formState extends State<dynamic_form> {
     );
   }
 
-
   Widget _buildImageArray(FormFieldEntity f) {
     final String name = f.name!;
     final int max = (f.max != null && f.max! > 0) ? f.max! : 5;
     const double size = 120;
+
+    // Lấy giá trị URL cũ nếu có
+    final List<String> existingUrls = (f.value is List)
+        ? List<String>.from(f.value!)
+        : [];
 
     Future<void> _chooseSourceAndPick() async {
       final source = await showModalBottomSheet<ImageSource>(
@@ -954,18 +968,25 @@ class _dynamic_formState extends State<dynamic_form> {
       );
       if (source != null) {
         final file = await _pickImageFrom(source);
-        if (file != null) setState(() => _imageArrays[name]!.add(file));
+        if (file != null) {
+          setState(() {
+            _imageArrays[name]!.add(file);
+            // Cập nhật luôn f.value
+            f = f.copyWith(value: [...existingUrls, ..._imageArrays[name]!]);
+          });
+        }
       }
     }
 
     Widget addTile() {
       return GestureDetector(
         onTap: () async {
-          if (_imageArrays[name]!.length >= max) return;
+          if (_imageArrays[name]!.length + existingUrls.length >= max) return;
           await _chooseSourceAndPick();
         },
         child: Container(
-          width: 100, height: 100,
+          width: size,
+          height: size,
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey),
             borderRadius: BorderRadius.circular(8),
@@ -975,12 +996,13 @@ class _dynamic_formState extends State<dynamic_form> {
       );
     }
 
-    Widget thumbTile(File file, int idx) {
+    Widget thumbTile({File? file, String? url, int? idx, bool isFile = true}) {
       return Stack(
         clipBehavior: Clip.none,
         children: [
           Container(
-            width: size, height: size,
+            width: size,
+            height: size,
             decoration: BoxDecoration(
               color: Colors.grey.shade50,
               border: Border.all(color: Colors.grey.shade300),
@@ -988,18 +1010,31 @@ class _dynamic_formState extends State<dynamic_form> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: Image.file(file, fit: BoxFit.cover),
+              child: isFile
+                  ? Image.file(file!, fit: BoxFit.cover)
+                  : Image.network(url!, fit: BoxFit.cover),
             ),
           ),
           Positioned(
-            top: -6, right: -6,
+            top: -6,
+            right: -6,
             child: Material(
               elevation: 2,
               shape: const CircleBorder(),
               color: Colors.white,
               child: InkWell(
                 customBorder: const CircleBorder(),
-                onTap: () => setState(() => _imageArrays[name]!.removeAt(idx)),
+                onTap: () {
+                  setState(() {
+                    if (isFile) {
+                      _imageArrays[name]!.removeAt(idx!);
+                    } else {
+                      existingUrls.removeAt(idx!);
+                    }
+                    // Cập nhật lại f.value sau khi xóa
+                    f = f.copyWith(value: [...existingUrls, ..._imageArrays[name]!]);
+                  });
+                },
                 child: const Padding(
                   padding: EdgeInsets.all(6.0),
                   child: Icon(Icons.delete_outline, size: 20, color: Colors.red),
@@ -1014,23 +1049,42 @@ class _dynamic_formState extends State<dynamic_form> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(_labelWithRequired(f), style: const TextStyle(fontWeight: FontWeight.w500)),
+        Text(_labelWithRequired(f),
+            style: const TextStyle(fontWeight: FontWeight.w500)),
         const SizedBox(height: 6),
         Wrap(
           spacing: 12,
           runSpacing: 12,
           children: [
-            ..._imageArrays[name]!.asMap().entries.map((e) => thumbTile(e.value, e.key)),
-            if (_imageArrays[name]!.length < max) addTile(),
+            // Hiển thị URL cũ
+            ...existingUrls.asMap().entries
+                .map((e) => thumbTile(url: e.value, idx: e.key, isFile: false)),
+            // Hiển thị File mới
+            ..._imageArrays[name]!.asMap().entries
+                .map((e) => thumbTile(file: e.value, idx: e.key)),
+            // Thêm ảnh nếu chưa đạt max
+            if (_imageArrays[name]!.length + existingUrls.length < max) addTile(),
           ],
         ),
         const SizedBox(height: 8),
-        Text("Tối đa $max ảnh • Nhấn để thêm ảnh", style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+        Text("Tối đa $max ảnh • Nhấn để thêm ảnh",
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
       ],
     );
   }
 
+
+
   Widget _buildSignature(FormFieldEntity f) {
+    Uint8List? existingSignature;
+    if (f.value != null && f.value!.isNotEmpty) {
+      try {
+        existingSignature = base64Decode(f.value!.split(',').last);
+      } catch (e) {
+        debugPrint("Cannot decode signature: $e");
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1047,13 +1101,42 @@ class _dynamic_formState extends State<dynamic_form> {
               height: 150,
               child: Stack(
                 children: [
-                  Signature(controller: _signatureController, backgroundColor: Colors.white),
+                  if (existingSignature != null)
+                    Image.memory(existingSignature, fit: BoxFit.contain),
+                  Signature(
+                    controller: _signatureController,
+                    backgroundColor: Colors.white.withOpacity(existingSignature != null ? 0.5 : 1),
+                  ),
                   Positioned(
-                    right: 8, top: 8,
-                    child: IconButton(
-                      icon: const Icon(Icons.clear, size: 20),
-                      tooltip: "Xóa chữ ký",
-                      onPressed: () => _signatureController.clear(),
+                    right: 8,
+                    top: 8,
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.clear, size: 20),
+                          tooltip: "Xóa chữ ký",
+                          onPressed: () {
+                            setState(() {
+                              _signatureController.clear();
+                              f = f.copyWith(value: null);
+                            });
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.check, size: 20),
+                          tooltip: "Lưu chữ ký",
+                          onPressed: () async {
+                            final data = await _signatureController.toPngBytes();
+                            if (data != null) {
+                              setState(() {
+                                f = f.copyWith(
+                                  value: "data:image/png;base64," + base64Encode(data),
+                                );
+                              });
+                            }
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -1064,6 +1147,8 @@ class _dynamic_formState extends State<dynamic_form> {
       ],
     );
   }
+
+
 
   // ====== BUILD FIELD (typed) ======
   // REPLACE _buildField
