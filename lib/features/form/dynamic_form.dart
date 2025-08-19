@@ -144,7 +144,7 @@ class _dynamic_formState extends State<dynamic_form> {
           setState(() {
             _provinces = items
                 .map<FormFieldOption>((e) =>
-                FormFieldOption(value: e['id'].toString(), label: e['name'].toString()))
+                FormFieldOption(value: e['id'], label: e['name'].toString()))
                 .toList();
             //_singleValues['province'] = firstProvinceId; // default
           });
@@ -214,8 +214,8 @@ class _dynamic_formState extends State<dynamic_form> {
 
       // Chuyển wardsList thành List<FormFieldOption>
       final wardOptions = wardsList.map<FormFieldOption>((e) => FormFieldOption(
-        value: e['code'].toString(),
-        label: e['name'].toString(),
+        value: e['code'],
+        label: e['name'],
       )).toList();
 
       // Cập nhật _formRequest.data với copyWith
@@ -273,7 +273,7 @@ class _dynamic_formState extends State<dynamic_form> {
           break;
         case 'select':
           if (f.options != null && f.options!.isNotEmpty) {
-            _singleValues[name] = f.options!.first.value; // lấy value của OptionEntity
+            _singleValues[name] = f.options!.first.value.toString(); // lấy value của OptionEntity
           } else {
             _singleValues[name] = null;
           }
@@ -418,15 +418,20 @@ class _dynamic_formState extends State<dynamic_form> {
   bool _isCurrentSelectionExtra(FormFieldEntity field) {
     final type = field.type;
     if (type != 'select' && type != 'radio') return false;
+
     final name = field.name;
     if (name == null) return false;
-    final selected = _singleValues[name];
+
+    // Ưu tiên lấy value từ field, nếu null thì lấy từ state
+    final selected = field.value ?? _singleValues[name];
     if (selected == null) return false;
+
     final options = field.options ?? const [];
     final opt = options.firstWhere(
-          (o) => o.value == selected,
+          (o) => o.value?.toString() == selected.toString(),
       orElse: () => const FormFieldOption(),
     );
+
     return opt.isExtraOption == true;
   }
 
@@ -619,39 +624,39 @@ class _dynamic_formState extends State<dynamic_form> {
   }
 
 
-  Widget _buildDropdownLike({
-    required FormFieldEntity f,
-    required List<FormFieldOption> options,
-    required String name,
-    void Function(String?)? onChanged,
-    double? labelMinHeight,
-    String? initialValue, // khai báo đúng type
-  }) {
-    return _wrapWithLabel(
-      _labelWithRequired(f),
-      SizedBox(
-        height: 48,
-        child: DropdownButtonFormField<String>(
-          value: _singleValues[name] ?? initialValue, // 🔥 fix chỗ này
-          decoration: _inputDecoration(null),
-          items: options
-              .map((opt) => DropdownMenuItem<String>(
-            value: opt.value,
-            child: Text(
-              opt.label ?? '',
-              style: const TextStyle(fontSize: 14),
-            ),
-          ))
-              .toList(),
-          onChanged: (v) {
-            setState(() => _singleValues[name] = v);
-            onChanged?.call(v);
-          },
-        ),
-      ),
-      labelMinHeight: labelMinHeight,
-    );
-  }
+  // Widget _buildDropdownLike({
+  //   required FormFieldEntity f,
+  //   required List<FormFieldOption> options,
+  //   required String name,
+  //   void Function(String?)? onChanged,
+  //   double? labelMinHeight,
+  //   String? initialValue, // khai báo đúng type
+  // }) {
+  //   return _wrapWithLabel(
+  //     _labelWithRequired(f),
+  //     SizedBox(
+  //       height: 48,
+  //       child: DropdownButtonFormField<String>(
+  //         value: _singleValues[name] ?? initialValue, // 🔥 fix chỗ này
+  //         decoration: _inputDecoration(null),
+  //         items: options
+  //             .map((opt) => DropdownMenuItem<String>(
+  //           value: opt.value.toString(),
+  //           child: Text(
+  //             opt.label ?? '',
+  //             style: const TextStyle(fontSize: 14),
+  //           ),
+  //         ))
+  //             .toList(),
+  //         onChanged: (v) {
+  //           setState(() => _singleValues[name] = v);
+  //           onChanged?.call(v);
+  //         },
+  //       ),
+  //     ),
+  //     labelMinHeight: labelMinHeight,
+  //   );
+  // }
 
 
   Widget _buildSelect(FormFieldEntity f, {double? labelMinHeight}) {
@@ -663,7 +668,8 @@ class _dynamic_formState extends State<dynamic_form> {
       f: f,
       options: options,
       name: name,
-      labelMinHeight: labelMinHeight, initialValue: null,
+      labelMinHeight: labelMinHeight,
+      initialValue: f.value as String?, // ép đúng kiểu String?
     );
 
     if ((nameSaveExtra ?? '').isNotEmpty && _isCurrentSelectionExtra(f)) {
@@ -683,6 +689,47 @@ class _dynamic_formState extends State<dynamic_form> {
     }
     return select;
   }
+
+  Widget _buildDropdownLike({
+    required FormFieldEntity f,
+    required List<FormFieldOption> options,
+    required String name,
+    void Function(String?)? onChanged,
+    double? labelMinHeight,
+    String? initialValue,
+  }) {
+    // luôn ép về String để so sánh an toàn
+    final currentValue = (initialValue ?? _singleValues[name])?.toString();
+
+    final validValues = options.map((e) => e.value?.toString()).toSet();
+    final safeValue = validValues.contains(currentValue) ? currentValue : null;
+
+    return _wrapWithLabel(
+      _labelWithRequired(f),
+      SizedBox(
+        height: 48,
+        child: DropdownButtonFormField<String>(
+          value: safeValue, // giờ sẽ là "3"
+          decoration: _inputDecoration(null),
+          items: options
+              .map((opt) => DropdownMenuItem<String>(
+            value: opt.value?.toString(),
+            child: Text(
+              opt.label ?? '',
+              style: const TextStyle(fontSize: 14),
+            ),
+          ))
+              .toList(),
+          onChanged: (v) {
+            setState(() => _singleValues[name] = v);
+            onChanged?.call(v);
+          },
+        ),
+      ),
+      labelMinHeight: labelMinHeight,
+    );
+  }
+
 
   Widget _buildRadio(FormFieldEntity f) {
     final name = f.name!;
@@ -705,7 +752,7 @@ class _dynamic_formState extends State<dynamic_form> {
                 visualDensity: VisualDensity.compact,
                 contentPadding: EdgeInsets.zero,
                 title: Text(opt.label ?? ''),
-                value: v ?? "",
+                value: v.toString() ?? "",
                 groupValue: _singleValues[name],
                 onChanged: (val) => setState(() => _singleValues[name] = val),
               ),
@@ -732,36 +779,64 @@ class _dynamic_formState extends State<dynamic_form> {
 
   Widget _buildCheckbox(FormFieldEntity f) {
     final name = f.name!;
+    // Ưu tiên lấy từ f.value (JSON), nếu null thì lấy trong state, cuối cùng fallback false
+    final currentValue = (f.value is bool ? f.value : null) ?? _checkboxValues[name] ?? false;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         children: [
           Checkbox(
-            value: _checkboxValues[name] ?? false,
-            onChanged: (v) => setState(() => _checkboxValues[name] = v ?? false),
+            value: currentValue,
+            onChanged: (v) {
+              setState(() {
+                _checkboxValues[name] = v ?? false;
+              });
+            },
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             visualDensity: VisualDensity.compact,
           ),
           const SizedBox(width: 6),
-          Expanded(child: Text(_labelWithRequired(f), style: const TextStyle(fontSize: 16))),
+          Expanded(
+            child: Text(
+              _labelWithRequired(f),
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
         ],
       ),
     );
   }
 
+
   Widget _buildMultiCheckbox(FormFieldEntity f) {
     final name = f.name!;
     final List<FormFieldOption> options = f.options ?? const [];
 
+    // Khởi tạo state nếu chưa có
+    //_multiValues[name] ??= [];
+    _multiValues[name] ??= <String>{};
+
+    // Ưu tiên load từ f.value (JSON) nếu có
+    if (f.value is List && (_multiValues[name]?.isEmpty ?? true)) {
+      _multiValues[name] = (f.value as List).map((e) => e.toString()).toSet();
+    }
+
+    final selectedValues = _multiValues[name]!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(_labelWithRequired(f), style: const TextStyle(fontWeight: FontWeight.w500)),
+        Text(
+          _labelWithRequired(f),
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
         const SizedBox(height: 6),
         ...options.map((opt) {
-          final v = opt.value!;
-          final selected = _multiValues[name]!.contains(v);
+          final v = opt.value?.toString() ?? '';
+          final selected = selectedValues.contains(v);
           final isExtra = opt.isExtraOption == true;
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -774,9 +849,11 @@ class _dynamic_formState extends State<dynamic_form> {
                 onChanged: (checked) {
                   setState(() {
                     if (checked == true) {
-                      _multiValues[name]!.add(v);
+                      if (!selectedValues.contains(v)) {
+                        selectedValues.add(v);
+                      }
                     } else {
-                      _multiValues[name]!.remove(v);
+                      selectedValues.remove(v);
                     }
                   });
                 },
@@ -799,6 +876,7 @@ class _dynamic_formState extends State<dynamic_form> {
       ],
     );
   }
+
 
   Widget _buildProvince(FormFieldEntity f, {double? labelMinHeight}) {
     final name = f.name!;
@@ -1018,7 +1096,7 @@ class _dynamic_formState extends State<dynamic_form> {
 
         // Thêm "Khác" nếu chưa có
         if (!options.any((o) => o.value == 'other')) {
-          options.add(const FormFieldOption(value: 'other', label: 'Khác'));
+          options.add(const FormFieldOption(value: 0, label: 'Khác'));
         }
 
         return _buildDropdownLike(
@@ -1176,7 +1254,7 @@ class _dynamic_formState extends State<dynamic_form> {
               if (opt.isExtraOption == true && _multiValues[name]!.contains(opt.value)) {
                 final key = '${name}__extra__${opt.value}';
                 final txt = _textCtrls[key]?.text ?? '';
-                extras.add({"value": opt.value ?? '', "text": txt});
+                extras.add({"value": opt.value.toString() ?? '', "text": txt});
               }
             }
             result[saveExtraKey!] = extras;
@@ -1197,9 +1275,9 @@ class _dynamic_formState extends State<dynamic_form> {
               options = _wards;
             } else if (type == 'gender') {
               options = const [
-                FormFieldOption(value: 'Nam', label: 'Nam'),
-                FormFieldOption(value: 'Nữ', label: 'Nữ'),
-                FormFieldOption(value: 'Khác', label: 'Khác'),
+                FormFieldOption(value: 1, label: 'Nam'),
+                FormFieldOption(value: 2, label: 'Nữ'),
+                FormFieldOption(value: 0, label: 'Khác'),
               ];
             }
             result[saveLabelKey!] = _labelForOption(options, selected);

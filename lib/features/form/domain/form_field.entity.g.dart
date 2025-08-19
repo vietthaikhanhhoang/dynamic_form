@@ -49,7 +49,7 @@ Map<String, dynamic> _$FormFieldEntityToJson(_FormFieldEntity instance) =>
 
 _FormFieldOption _$FormFieldOptionFromJson(Map<String, dynamic> json) =>
     _FormFieldOption(
-      value: json['value'] as String?,
+      value: json['value'],
       label: json['label'] as String?,
       isExtraOption: json['isExtraOption'] as bool?,
     );

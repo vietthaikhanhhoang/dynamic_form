@@ -330,7 +330,7 @@ as String?,
 /// @nodoc
 mixin _$FormFieldOption {
 
-@JsonKey(name: 'value') String? get value;@JsonKey(name: 'label') String? get label;@JsonKey(name: 'isExtraOption') bool? get isExtraOption;
+@JsonKey(name: 'value') dynamic? get value;@JsonKey(name: 'label') String? get label;@JsonKey(name: 'isExtraOption') bool? get isExtraOption;
 /// Create a copy of FormFieldOption
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -343,12 +343,12 @@ $FormFieldOptionCopyWith<FormFieldOption> get copyWith => _$FormFieldOptionCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FormFieldOption&&(identical(other.value, value) || other.value == value)&&(identical(other.label, label) || other.label == label)&&(identical(other.isExtraOption, isExtraOption) || other.isExtraOption == isExtraOption));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FormFieldOption&&const DeepCollectionEquality().equals(other.value, value)&&(identical(other.label, label) || other.label == label)&&(identical(other.isExtraOption, isExtraOption) || other.isExtraOption == isExtraOption));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,value,label,isExtraOption);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(value),label,isExtraOption);
 
 @override
 String toString() {
@@ -363,7 +363,7 @@ abstract mixin class $FormFieldOptionCopyWith<$Res>  {
   factory $FormFieldOptionCopyWith(FormFieldOption value, $Res Function(FormFieldOption) _then) = _$FormFieldOptionCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'value') String? value,@JsonKey(name: 'label') String? label,@JsonKey(name: 'isExtraOption') bool? isExtraOption
+@JsonKey(name: 'value') dynamic? value,@JsonKey(name: 'label') String? label,@JsonKey(name: 'isExtraOption') bool? isExtraOption
 });
 
 
@@ -383,7 +383,7 @@ class _$FormFieldOptionCopyWithImpl<$Res>
 @pragma('vm:prefer-inline') @override $Res call({Object? value = freezed,Object? label = freezed,Object? isExtraOption = freezed,}) {
   return _then(_self.copyWith(
 value: freezed == value ? _self.value : value // ignore: cast_nullable_to_non_nullable
-as String?,label: freezed == label ? _self.label : label // ignore: cast_nullable_to_non_nullable
+as dynamic?,label: freezed == label ? _self.label : label // ignore: cast_nullable_to_non_nullable
 as String?,isExtraOption: freezed == isExtraOption ? _self.isExtraOption : isExtraOption // ignore: cast_nullable_to_non_nullable
 as bool?,
   ));
@@ -470,7 +470,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'value')  String? value, @JsonKey(name: 'label')  String? label, @JsonKey(name: 'isExtraOption')  bool? isExtraOption)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'value')  dynamic? value, @JsonKey(name: 'label')  String? label, @JsonKey(name: 'isExtraOption')  bool? isExtraOption)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _FormFieldOption() when $default != null:
 return $default(_that.value,_that.label,_that.isExtraOption);case _:
@@ -491,7 +491,7 @@ return $default(_that.value,_that.label,_that.isExtraOption);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'value')  String? value, @JsonKey(name: 'label')  String? label, @JsonKey(name: 'isExtraOption')  bool? isExtraOption)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'value')  dynamic? value, @JsonKey(name: 'label')  String? label, @JsonKey(name: 'isExtraOption')  bool? isExtraOption)  $default,) {final _that = this;
 switch (_that) {
 case _FormFieldOption():
 return $default(_that.value,_that.label,_that.isExtraOption);case _:
@@ -511,7 +511,7 @@ return $default(_that.value,_that.label,_that.isExtraOption);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'value')  String? value, @JsonKey(name: 'label')  String? label, @JsonKey(name: 'isExtraOption')  bool? isExtraOption)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'value')  dynamic? value, @JsonKey(name: 'label')  String? label, @JsonKey(name: 'isExtraOption')  bool? isExtraOption)?  $default,) {final _that = this;
 switch (_that) {
 case _FormFieldOption() when $default != null:
 return $default(_that.value,_that.label,_that.isExtraOption);case _:
@@ -529,7 +529,7 @@ class _FormFieldOption implements FormFieldOption {
   const _FormFieldOption({@JsonKey(name: 'value') this.value, @JsonKey(name: 'label') this.label, @JsonKey(name: 'isExtraOption') this.isExtraOption});
   factory _FormFieldOption.fromJson(Map<String, dynamic> json) => _$FormFieldOptionFromJson(json);
 
-@override@JsonKey(name: 'value') final  String? value;
+@override@JsonKey(name: 'value') final  dynamic? value;
 @override@JsonKey(name: 'label') final  String? label;
 @override@JsonKey(name: 'isExtraOption') final  bool? isExtraOption;
 
@@ -546,12 +546,12 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FormFieldOption&&(identical(other.value, value) || other.value == value)&&(identical(other.label, label) || other.label == label)&&(identical(other.isExtraOption, isExtraOption) || other.isExtraOption == isExtraOption));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FormFieldOption&&const DeepCollectionEquality().equals(other.value, value)&&(identical(other.label, label) || other.label == label)&&(identical(other.isExtraOption, isExtraOption) || other.isExtraOption == isExtraOption));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,value,label,isExtraOption);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(value),label,isExtraOption);
 
 @override
 String toString() {
@@ -566,7 +566,7 @@ abstract mixin class _$FormFieldOptionCopyWith<$Res> implements $FormFieldOption
   factory _$FormFieldOptionCopyWith(_FormFieldOption value, $Res Function(_FormFieldOption) _then) = __$FormFieldOptionCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'value') String? value,@JsonKey(name: 'label') String? label,@JsonKey(name: 'isExtraOption') bool? isExtraOption
+@JsonKey(name: 'value') dynamic? value,@JsonKey(name: 'label') String? label,@JsonKey(name: 'isExtraOption') bool? isExtraOption
 });
 
 
@@ -586,7 +586,7 @@ class __$FormFieldOptionCopyWithImpl<$Res>
 @override @pragma('vm:prefer-inline') $Res call({Object? value = freezed,Object? label = freezed,Object? isExtraOption = freezed,}) {
   return _then(_FormFieldOption(
 value: freezed == value ? _self.value : value // ignore: cast_nullable_to_non_nullable
-as String?,label: freezed == label ? _self.label : label // ignore: cast_nullable_to_non_nullable
+as dynamic?,label: freezed == label ? _self.label : label // ignore: cast_nullable_to_non_nullable
 as String?,isExtraOption: freezed == isExtraOption ? _self.isExtraOption : isExtraOption // ignore: cast_nullable_to_non_nullable
 as bool?,
   ));
