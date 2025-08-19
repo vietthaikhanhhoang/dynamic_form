@@ -733,17 +733,25 @@ class _dynamic_formState extends State<dynamic_form> {
 
   Widget _buildRadio(FormFieldEntity f) {
     final name = f.name!;
-    final nameSaveExtra = f.nameSaveExtraOption;
     final List<FormFieldOption> options = f.options ?? const [];
+
+    // Ưu tiên lấy từ f.value (init value)
+    final currentValue = (f.value ?? _singleValues[name])?.toString();
+    _singleValues[name] = currentValue;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(_labelWithRequired(f), style: const TextStyle(fontWeight: FontWeight.w500)),
+        Text(
+          _labelWithRequired(f),
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
         const SizedBox(height: 6),
         ...options.map((opt) {
-          final v = opt.value;
-          final isSelected = _singleValues[name] == v;
+          final v = opt.value?.toString();
+          final isSelected = currentValue == v;
+          final isExtra = opt.isExtraOption == true;
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -752,19 +760,21 @@ class _dynamic_formState extends State<dynamic_form> {
                 visualDensity: VisualDensity.compact,
                 contentPadding: EdgeInsets.zero,
                 title: Text(opt.label ?? ''),
-                value: v.toString() ?? "",
-                groupValue: _singleValues[name],
-                onChanged: (val) => setState(() => _singleValues[name] = val),
+                value: v ?? '',
+                groupValue: currentValue,
+                onChanged: (val) {
+                  setState(() {
+                    _singleValues[name] = val;
+                  });
+                },
               ),
-              if ((nameSaveExtra ?? '').isNotEmpty &&
-                  (opt.isExtraOption == true) &&
-                  isSelected)
+              if (isExtra && isSelected)
                 Padding(
                   padding: const EdgeInsets.only(left: 40.0, bottom: 8),
                   child: SizedBox(
                     width: 360,
                     child: TextField(
-                      controller: _textCtrls['${name}__extra'],
+                      controller: _textCtrls['${name}__extra__${v}'],
                       decoration: _inputDecoration('Nhập giá trị tùy chỉnh'),
                       style: const TextStyle(fontSize: 14),
                     ),
@@ -776,6 +786,7 @@ class _dynamic_formState extends State<dynamic_form> {
       ],
     );
   }
+
 
   Widget _buildCheckbox(FormFieldEntity f) {
     final name = f.name!;
