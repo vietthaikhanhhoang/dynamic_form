@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:dynamicform/features/form/widgets/formgeneral.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
@@ -159,38 +160,6 @@ class _dynamic_formState extends State<dynamic_form> {
     }
   }
 
-  // Future<void> loadWards(String provinceCode, String nameFieldDependent) async {
-  //   try {
-  //     final res = await getWards(provinceCode: provinceCode);
-  //     if (res.statusCode == 200) {
-  //       final data = jsonDecode(res.body);
-  //       if (data['status'] == 'success' &&
-  //           data['data'] is Map &&
-  //           data['data']['items'] is List) {
-  //         final wardsList = data['data']['items'] as List;
-  //         if (wardsList.isNotEmpty) {
-  //           setState(() {
-  //             _wards = wardsList
-  //                 .map<FormFieldOption>((e) =>
-  //                 FormFieldOption(value: e['code'].toString(), label: e['name'].toString()))
-  //                 .toList();
-  //             //_singleValues['ward'] = _wards.first.value;
-  //             print("ok");
-  //           });
-  //         } else {
-  //           debugPrint('Không có dữ liệu wards cho provinceCode: $provinceCode');
-  //         }
-  //       } else {
-  //         debugPrint('Dữ liệu wards không hợp lệ: $data');
-  //       }
-  //     } else {
-  //       debugPrint('Lỗi load wards: ${res.statusCode}');
-  //     }
-  //   } catch (e) {
-  //     debugPrint('Exception load wards: $e');
-  //   }
-  // }
-
   Future<void> loadWards(String provinceCode, String nameFieldDependent) async {
     try {
       final res = await getWards(provinceCode: provinceCode);
@@ -286,15 +255,15 @@ class _dynamic_formState extends State<dynamic_form> {
         case 'province':
         case 'ward':
         case 'gender':
-          // if (f.options != null && f.options!.isNotEmpty) {
-          //   _singleValues[name] = f.options!.first.value;
-          // } else {
-          //   _singleValues[name] = null;
-          // }
-          // if ((f.nameSaveExtraOption ?? '').isNotEmpty) {
-          //   _textCtrls['${name}__extra'] = TextEditingController();
-          // }
-          // break;
+        // if (f.options != null && f.options!.isNotEmpty) {
+        //   _singleValues[name] = f.options!.first.value;
+        // } else {
+        //   _singleValues[name] = null;
+        // }
+        // if ((f.nameSaveExtraOption ?? '').isNotEmpty) {
+        //   _textCtrls['${name}__extra'] = TextEditingController();
+        // }
+        // break;
         case 'checkbox':
           _checkboxValues[name] = false;
           break;
@@ -310,7 +279,7 @@ class _dynamic_formState extends State<dynamic_form> {
           _imageArrays[name] = <File>[];
           break;
         case 'signature':
-           break;
+          break;
         default:
           break;
       }
@@ -318,101 +287,11 @@ class _dynamic_formState extends State<dynamic_form> {
     setState(() {});
   }
 
-  // // ====== STYLE input ======
-  // InputDecoration _inputDecoration(String? label, {Widget? suffixIcon}) {
-  //   return InputDecoration(
-  //     isDense: true,
-  //     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-  //     border: OutlineInputBorder(
-  //       borderRadius: BorderRadius.circular(6),
-  //       borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
-  //     ),
-  //     enabledBorder: OutlineInputBorder(
-  //       borderRadius: BorderRadius.circular(6),
-  //       borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
-  //     ),
-  //     focusedBorder: OutlineInputBorder(
-  //       borderRadius: BorderRadius.circular(6),
-  //       borderSide: const BorderSide(color: Colors.blue, width: 1.2),
-  //     ),
-  //     labelText: label,
-  //     suffixIcon: suffixIcon != null
-  //         ? Padding(
-  //       padding: const EdgeInsets.all(8.0),
-  //       child: SizedBox(height: 20, width: 20, child: suffixIcon),
-  //     )
-  //         : null,
-  //   );
-  // }
-
-  // InputDecoration _inputDecoration(String? label, {Widget? suffixIcon}) {
-  //   return InputDecoration(
-  //     isDense: true,
-  //     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-  //     border: OutlineInputBorder(
-  //       borderRadius: BorderRadius.circular(6),
-  //       borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
-  //     ),
-  //     enabledBorder: OutlineInputBorder(
-  //       borderRadius: BorderRadius.circular(6),
-  //       borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
-  //     ),
-  //     focusedBorder: OutlineInputBorder(
-  //       borderRadius: BorderRadius.circular(6),
-  //       borderSide: const BorderSide(color: Colors.blue, width: 1.2),
-  //     ),
-  //     labelText: label,
-  //     suffixIcon: suffixIcon != null
-  //         ? Padding(
-  //       padding: const EdgeInsets.all(8.0),
-  //       child: SizedBox(height: 20, width: 20, child: suffixIcon),
-  //     )
-  //         : null,
-  //   );
-  // }
-
-  InputDecoration _inputDecoration(String? label, {Widget? suffixIcon}) {
-    return InputDecoration(
-      isDense: true, // giúp input gọn hơn
-      alignLabelWithHint: true, // label luôn thẳng hàng trên cùng
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6),
-        borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6),
-        borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6),
-        borderSide: const BorderSide(color: Colors.blue, width: 1.2),
-      ),
-      // labelText: label,
-      labelStyle: const TextStyle(
-        height: 1.2, // đảm bảo label cùng chiều cao trong 1 dòng
-      ),
-      suffixIcon: suffixIcon != null
-          ? Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: SizedBox(height: 20, width: 20, child: suffixIcon),
-      )
-          : null,
-    );
-  }
-
   // ====== IMAGE PICKER ======
   Future<File?> _pickImageFrom(ImageSource source) async {
     final picked = await ImagePicker().pickImage(source: source, imageQuality: 75);
     if (picked == null) return null;
     return File(picked.path);
-  }
-
-  // ====== HELPERS (typed) ======
-  String _labelWithRequired(FormFieldEntity f) {
-    final label = (f.label ?? '').toString();
-    final isRequired = f.isRequired == true;
-    return isRequired ? '$label(*)' : label;
   }
 
   bool _isCurrentSelectionExtra(FormFieldEntity field) {
@@ -444,90 +323,6 @@ class _dynamic_formState extends State<dynamic_form> {
     return found.label;
   }
 
-  // ====== UI BUILDERS (typed) ======
-  Widget _wrapWithLabel(String label, Widget child, {double? labelMinHeight}) {
-    final labelWidget = Text(
-      label,
-      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (labelMinHeight != null)
-          ConstrainedBox(
-            constraints: BoxConstraints(minHeight: labelMinHeight),
-            child: Align(alignment: Alignment.centerLeft, child: labelWidget),
-          )
-        else
-          labelWidget,
-        const SizedBox(height: 6),
-        child,
-      ],
-    );
-  }
-
-  Widget _titleLarge(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 6, bottom: 8),
-      child: Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-    );
-  }
-
-  Widget _titleMedium(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 6, bottom: 6),
-      child: Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-    );
-  }
-
-  Widget _titleSmall(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 4, bottom: 4),
-      child: Text(text, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-    );
-  }
-
-  Widget _description(String text) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(text, style: TextStyle(color: Colors.grey.shade700)),
-    );
-  }
-
-  // Widget _buildText(FormFieldEntity f) {
-  //   final name = f.name!;
-  //   return _wrapWithLabel(
-  //     _labelWithRequired(f),
-  //     TextField(
-  //       controller: _textCtrls[name],
-  //       decoration: _inputDecoration(f.label),
-  //       style: const TextStyle(fontSize: 14),
-  //     ),
-  //   );
-  // }
-
-  // Widget _buildText(FormFieldEntity f, {double? labelMinHeight}) {
-  //   final name = f.name!;
-  //   return _wrapWithLabel(
-  //     _labelWithRequired(f),
-  //     SizedBox(
-  //       height: 48,
-  //       child: TextField(
-  //         controller: _textCtrls[name],
-  //         decoration: _inputDecoration(null), // không label trong outline
-  //         style: const TextStyle(fontSize: 14),
-  //       ),
-  //     ),
-  //     labelMinHeight: labelMinHeight,
-  //   );
-  // }
   Widget _buildText(FormFieldEntity f, {double? labelMinHeight}) {
     final name = f.name!;
 
@@ -537,13 +332,13 @@ class _dynamic_formState extends State<dynamic_form> {
     // Luôn set giá trị mặc định nếu f.value khác null
     _textCtrls[name]!.text = f.value?.toString() ?? '';
 
-    return _wrapWithLabel(
-      _labelWithRequired(f),
+    return wrapWithLabel(
+      labelWithRequired(f),
       SizedBox(
         height: 48,
         child: TextField(
           controller: _textCtrls[name],
-          decoration: _inputDecoration(null),
+          decoration: inputDecoration(null),
           style: const TextStyle(fontSize: 14),
           onChanged: (val) {
             // Cập nhật giá trị vào entity gốc hoặc map ngoài
@@ -554,32 +349,6 @@ class _dynamic_formState extends State<dynamic_form> {
       labelMinHeight: labelMinHeight,
     );
   }
-
-  Widget _buildTextarea(FormFieldEntity f, {double? labelMinHeight}) {
-    final name = f.name!;
-    final rows = (f.row != null && f.row! > 0) ? f.row! : 3;
-
-    // Khởi tạo controller nếu chưa có
-    if (_textCtrls[name] == null) {
-      _textCtrls[name] = TextEditingController(text: f.value?.toString());
-    }
-
-    return _wrapWithLabel(
-      _labelWithRequired(f),
-      TextField(
-        controller: _textCtrls[name],
-        minLines: rows,
-        maxLines: rows + 2,
-        decoration: _inputDecoration(null),
-        style: const TextStyle(fontSize: 14),
-        onChanged: (val) {
-          _textCtrls[name]?.text = val;
-        },
-      ),
-      labelMinHeight: labelMinHeight,
-    );
-  }
-
 
   Widget _buildDate(FormFieldEntity f, {double? labelMinHeight}) {
     final name = f.name!;
@@ -595,8 +364,8 @@ class _dynamic_formState extends State<dynamic_form> {
       }
     }
 
-    return _wrapWithLabel(
-      _labelWithRequired(f),
+    return wrapWithLabel(
+      labelWithRequired(f),
       SizedBox(
         height: 48,
         child: InkWell(
@@ -617,7 +386,7 @@ class _dynamic_formState extends State<dynamic_form> {
           child: IgnorePointer(
             child: TextField(
               controller: _dateCtrls[name],
-              decoration: _inputDecoration(
+              decoration: inputDecoration(
                 null,
                 suffixIcon: Icon(Icons.calendar_today, size: 18, color: Colors.grey.shade600),
               ).copyWith(
@@ -632,42 +401,6 @@ class _dynamic_formState extends State<dynamic_form> {
       labelMinHeight: labelMinHeight,
     );
   }
-
-
-  // Widget _buildDropdownLike({
-  //   required FormFieldEntity f,
-  //   required List<FormFieldOption> options,
-  //   required String name,
-  //   void Function(String?)? onChanged,
-  //   double? labelMinHeight,
-  //   String? initialValue, // khai báo đúng type
-  // }) {
-  //   return _wrapWithLabel(
-  //     _labelWithRequired(f),
-  //     SizedBox(
-  //       height: 48,
-  //       child: DropdownButtonFormField<String>(
-  //         value: _singleValues[name] ?? initialValue, // 🔥 fix chỗ này
-  //         decoration: _inputDecoration(null),
-  //         items: options
-  //             .map((opt) => DropdownMenuItem<String>(
-  //           value: opt.value.toString(),
-  //           child: Text(
-  //             opt.label ?? '',
-  //             style: const TextStyle(fontSize: 14),
-  //           ),
-  //         ))
-  //             .toList(),
-  //         onChanged: (v) {
-  //           setState(() => _singleValues[name] = v);
-  //           onChanged?.call(v);
-  //         },
-  //       ),
-  //     ),
-  //     labelMinHeight: labelMinHeight,
-  //   );
-  // }
-
 
   Widget _buildSelect(FormFieldEntity f, {double? labelMinHeight}) {
     final name = f.name!;
@@ -691,7 +424,7 @@ class _dynamic_formState extends State<dynamic_form> {
           const SizedBox(height: 8),
           TextField(
             controller: _textCtrls[extraKey],
-            decoration: _inputDecoration('Nhập giá trị tùy chỉnh'),
+            decoration: inputDecoration('Nhập giá trị tùy chỉnh'),
             style: const TextStyle(fontSize: 14),
           ),
         ],
@@ -714,13 +447,13 @@ class _dynamic_formState extends State<dynamic_form> {
     final validValues = options.map((e) => e.value?.toString()).toSet();
     final safeValue = validValues.contains(currentValue) ? currentValue : null;
 
-    return _wrapWithLabel(
-      _labelWithRequired(f),
+    return wrapWithLabel(
+      labelWithRequired(f),
       SizedBox(
         height: 48,
         child: DropdownButtonFormField<String>(
           value: safeValue, // giờ sẽ là "3"
-          decoration: _inputDecoration(null),
+          decoration: inputDecoration(null),
           items: options
               .map((opt) => DropdownMenuItem<String>(
             value: opt.value?.toString(),
@@ -740,165 +473,6 @@ class _dynamic_formState extends State<dynamic_form> {
     );
   }
 
-
-  Widget _buildRadio(FormFieldEntity f) {
-    final name = f.name!;
-    final List<FormFieldOption> options = f.options ?? const [];
-
-    // Ưu tiên lấy từ f.value (init value)
-    final currentValue = (f.value ?? _singleValues[name])?.toString();
-    _singleValues[name] = currentValue;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          _labelWithRequired(f),
-          style: const TextStyle(fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 6),
-        ...options.map((opt) {
-          final v = opt.value?.toString();
-          final isSelected = currentValue == v;
-          final isExtra = opt.isExtraOption == true;
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              RadioListTile<String>(
-                dense: true,
-                visualDensity: VisualDensity.compact,
-                contentPadding: EdgeInsets.zero,
-                title: Text(opt.label ?? ''),
-                value: v ?? '',
-                groupValue: currentValue,
-                onChanged: (val) {
-                  setState(() {
-                    _singleValues[name] = val;
-                  });
-                },
-              ),
-              if (isExtra && isSelected)
-                Padding(
-                  padding: const EdgeInsets.only(left: 40.0, bottom: 8),
-                  child: SizedBox(
-                    width: 360,
-                    child: TextField(
-                      controller: _textCtrls['${name}__extra__${v}'],
-                      decoration: _inputDecoration('Nhập giá trị tùy chỉnh'),
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ),
-                ),
-            ],
-          );
-        }),
-      ],
-    );
-  }
-
-
-  Widget _buildCheckbox(FormFieldEntity f) {
-    final name = f.name!;
-    // Ưu tiên lấy từ f.value (JSON), nếu null thì lấy trong state, cuối cùng fallback false
-    final currentValue = (f.value is bool ? f.value : null) ?? _checkboxValues[name] ?? false;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          Checkbox(
-            value: currentValue,
-            onChanged: (v) {
-              setState(() {
-                _checkboxValues[name] = v ?? false;
-              });
-            },
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            visualDensity: VisualDensity.compact,
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              _labelWithRequired(f),
-              style: const TextStyle(fontSize: 16),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-
-  Widget _buildMultiCheckbox(FormFieldEntity f) {
-    final name = f.name!;
-    final List<FormFieldOption> options = f.options ?? const [];
-
-    // Khởi tạo state nếu chưa có
-    //_multiValues[name] ??= [];
-    _multiValues[name] ??= <String>{};
-
-    // Ưu tiên load từ f.value (JSON) nếu có
-    if (f.value is List && (_multiValues[name]?.isEmpty ?? true)) {
-      _multiValues[name] = (f.value as List).map((e) => e.toString()).toSet();
-    }
-
-    final selectedValues = _multiValues[name]!;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          _labelWithRequired(f),
-          style: const TextStyle(fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 6),
-        ...options.map((opt) {
-          final v = opt.value?.toString() ?? '';
-          final selected = selectedValues.contains(v);
-          final isExtra = opt.isExtraOption == true;
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CheckboxListTile(
-                dense: true,
-                visualDensity: VisualDensity.compact,
-                contentPadding: EdgeInsets.zero,
-                title: Text(opt.label ?? ''),
-                value: selected,
-                onChanged: (checked) {
-                  setState(() {
-                    if (checked == true) {
-                      if (!selectedValues.contains(v)) {
-                        selectedValues.add(v);
-                      }
-                    } else {
-                      selectedValues.remove(v);
-                    }
-                  });
-                },
-              ),
-              if (isExtra && selected)
-                Padding(
-                  padding: const EdgeInsets.only(left: 40.0, bottom: 8),
-                  child: SizedBox(
-                    width: 360,
-                    child: TextField(
-                      controller: _textCtrls['${name}__extra__${v}'],
-                      decoration: _inputDecoration('Nhập giá trị tùy chỉnh'),
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ),
-                ),
-            ],
-          );
-        }),
-      ],
-    );
-  }
-
-
   Widget _buildProvince(FormFieldEntity f, {double? labelMinHeight}) {
     final name = f.name!;
     return _buildDropdownLike(
@@ -914,16 +488,6 @@ class _dynamic_formState extends State<dynamic_form> {
       labelMinHeight: labelMinHeight,
     );
   }
-
-  // Widget _buildWard(FormFieldEntity f, {double? labelMinHeight}) {
-  //   final name = f.name!;
-  //   return _buildDropdownLike(
-  //     f: f,
-  //     name: name,
-  //     options: _wards,
-  //     labelMinHeight: labelMinHeight,
-  //   );
-  // }
 
   Widget _buildWard(FormFieldEntity f, {double? labelMinHeight}) {
     final name = f.name!;
@@ -1064,7 +628,7 @@ class _dynamic_formState extends State<dynamic_form> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(_labelWithRequired(f),
+        Text(labelWithRequired(f),
             style: const TextStyle(fontWeight: FontWeight.w500)),
         const SizedBox(height: 6),
         Wrap(
@@ -1088,82 +652,6 @@ class _dynamic_formState extends State<dynamic_form> {
     );
   }
 
-  Widget _buildSignature(FormFieldEntity f) {
-    Uint8List? existingSignature;
-    if (f.value != null && f.value!.isNotEmpty) {
-      try {
-        existingSignature = base64Decode(f.value!.split(',').last);
-      } catch (e) {
-        debugPrint("Cannot decode signature: $e");
-      }
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(_labelWithRequired(f), style: const TextStyle(fontWeight: FontWeight.w500)),
-        const SizedBox(height: 6),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade400),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: SizedBox(
-              height: 150,
-              child: Stack(
-                children: [
-                  if (existingSignature != null)
-                    Image.memory(existingSignature, fit: BoxFit.contain),
-                  Signature(
-                    controller: _signatureController,
-                    backgroundColor: Colors.white.withOpacity(existingSignature != null ? 0.5 : 1),
-                  ),
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.clear, size: 20),
-                          tooltip: "Xóa chữ ký",
-                          onPressed: () {
-                            setState(() {
-                              _signatureController.clear();
-                              f = f.copyWith(value: null);       // Xoá chữ ký cũ
-                              existingSignature = null;          // Xoá hiển thị cũ luôn
-                            });
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.check, size: 20),
-                          tooltip: "Lưu chữ ký",
-                          onPressed: () async {
-                            final data = await _signatureController.toPngBytes();
-                            if (data != null) {
-                              setState(() {
-                                f = f.copyWith(
-                                  value: "data:image/png;base64," + base64Encode(data),
-                                );
-                              });
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-
-
   // ====== BUILD FIELD (typed) ======
   // REPLACE _buildField
   Widget _buildField(FormFieldEntity f, {double? labelMinHeight}) {
@@ -1173,9 +661,16 @@ class _dynamic_formState extends State<dynamic_form> {
       case 'text':
         return _buildText(f, labelMinHeight: labelMinHeight);
       case 'textarea':
-        return _buildTextarea(f, labelMinHeight: labelMinHeight);
+        return buildTextarea(f, labelMinHeight: labelMinHeight, textCtrls: _textCtrls);
       case 'date':
-        return _buildDate(f, labelMinHeight: labelMinHeight);
+        return buildDate(
+          context,
+          f,
+          dateCtrls: _dateCtrls,
+          dateValues: _dateValues,
+          setState: setState,
+          labelMinHeight: labelMinHeight,
+        );
       case 'select':
         return _buildSelect(f, labelMinHeight: labelMinHeight);
       case 'province':
@@ -1183,23 +678,42 @@ class _dynamic_formState extends State<dynamic_form> {
       case 'ward':
         return _buildWard(f, labelMinHeight: labelMinHeight);
       case 'radio':
-        return _buildRadio(f); // (nếu muốn đồng bộ, mình chỉnh tiếp)
+        return buildRadio(
+          f,
+          singleValues: _singleValues,
+          textCtrls: _textCtrls,
+          setState: setState,
+        );
       case 'checkbox':
-        return _buildCheckbox(f);
+        return buildCheckbox(
+          f,
+          checkboxValues: _checkboxValues,
+          setState: setState,
+        );
       case 'multiCheckbox':
-        return _buildMultiCheckbox(f);
+        return buildMultiCheckbox(
+          f,
+          multiValues: _multiValues,
+          textCtrls: _textCtrls,
+          setState: setState,
+        );
       case 'image':
         return _buildImageArray(f);
       case 'signature':
-        return _buildSignature(f);
+        return buildSignature(
+          f,
+          _signatureController,
+          setState,
+          labelWithRequired,
+        );
       case 'titleLarge':
-        return _titleLarge(f.label ?? '');
+        return titleLarge(f.label ?? '');
       case 'titleMedium':
-        return _titleMedium(f.label ?? '');
+        return titleMedium(f.label ?? '');
       case 'titleSmall':
-        return _titleSmall(f.label ?? '');
+        return titleSmall(f.label ?? '');
       case 'description':
-        return _description(f.label ?? '');
+        return description(f.label ?? '');
       case 'gender':
       // clone lại options từ entity
         final options = List<FormFieldOption>.from(f.options ?? []);
@@ -1216,7 +730,6 @@ class _dynamic_formState extends State<dynamic_form> {
           initialValue: f.value, // 🔥 đây mới là cái để hiển thị "Nam" khi f.value == "male"
           labelMinHeight: labelMinHeight,
         );
-
 
       default:
         return const SizedBox.shrink();
@@ -1419,37 +932,6 @@ class _dynamic_formState extends State<dynamic_form> {
     );
   }
 
-  // ====== FOOTER (giản lược, bạn có thể thay bằng footer cũ) ======
-  Widget _buildFooter() {
-    return Column(
-      children: [
-        const SizedBox(height: 16),
-        Divider(color: Colors.grey.shade300),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.network(
-              "https://upload.wikimedia.org/wikipedia/commons/6/6b/VNPT_logo.png",
-              width: 30, height: 30,
-              errorBuilder: (context, error, stackTrace) => const Icon(Icons.error, size: 30),
-            ),
-            const SizedBox(width: 8),
-            const Expanded(
-              child: Text(
-                "© 2025 VNPT - Bản quyền thuộc về Tập đoàn Bưu chính Viễn thông Việt Nam",
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 2,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
   // ====== BUILD ======
   @override
   void initState() {
@@ -1476,7 +958,7 @@ class _dynamic_formState extends State<dynamic_form> {
         padding: const EdgeInsets.all(16),
         child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [...widgets, _buildFooter()]),
+            children: [...widgets, buildFooter()]),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
