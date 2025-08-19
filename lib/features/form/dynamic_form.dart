@@ -26,6 +26,8 @@ class _dynamic_formState extends State<dynamic_form> {
 
   // ====== STATE MAPS ======
   final Map<String, TextEditingController> _textCtrls = {};
+  final Map<String, TextEditingController> _dateCtrls = {};
+
   final Map<String, DateTime?> _dateValues = {};
   final Map<String, String?> _singleValues = {};
   final Map<String, bool> _checkboxValues = {};
@@ -283,15 +285,15 @@ class _dynamic_formState extends State<dynamic_form> {
         case 'province':
         case 'ward':
         case 'gender':
-          if (f.options != null && f.options!.isNotEmpty) {
-            //_singleValues[name] = f.options!.first['value'];
-          } else {
-            _singleValues[name] = null;
-          }
-          if ((f.nameSaveExtraOption ?? '').isNotEmpty) {
-            _textCtrls['${name}__extra'] = TextEditingController();
-          }
-          break;
+          // if (f.options != null && f.options!.isNotEmpty) {
+          //   _singleValues[name] = f.options!.first.value;
+          // } else {
+          //   _singleValues[name] = null;
+          // }
+          // if ((f.nameSaveExtraOption ?? '').isNotEmpty) {
+          //   _textCtrls['${name}__extra'] = TextEditingController();
+          // }
+          // break;
         case 'checkbox':
           _checkboxValues[name] = false;
           break;
@@ -506,16 +508,42 @@ class _dynamic_formState extends State<dynamic_form> {
   //   );
   // }
 
+  // Widget _buildText(FormFieldEntity f, {double? labelMinHeight}) {
+  //   final name = f.name!;
+  //   return _wrapWithLabel(
+  //     _labelWithRequired(f),
+  //     SizedBox(
+  //       height: 48,
+  //       child: TextField(
+  //         controller: _textCtrls[name],
+  //         decoration: _inputDecoration(null), // không label trong outline
+  //         style: const TextStyle(fontSize: 14),
+  //       ),
+  //     ),
+  //     labelMinHeight: labelMinHeight,
+  //   );
+  // }
   Widget _buildText(FormFieldEntity f, {double? labelMinHeight}) {
     final name = f.name!;
+
+    // Khởi tạo controller nếu chưa có
+    _textCtrls[name] = _textCtrls[name] ?? TextEditingController();
+
+    // Luôn set giá trị mặc định nếu f.value khác null
+    _textCtrls[name]!.text = f.value?.toString() ?? '';
+
     return _wrapWithLabel(
       _labelWithRequired(f),
       SizedBox(
         height: 48,
         child: TextField(
           controller: _textCtrls[name],
-          decoration: _inputDecoration(null), // không label trong outline
+          decoration: _inputDecoration(null),
           style: const TextStyle(fontSize: 14),
+          onChanged: (val) {
+            // Cập nhật giá trị vào entity gốc hoặc map ngoài
+            // _formData[name] = f.copyWith(value: val);
+          },
         ),
       ),
       labelMinHeight: labelMinHeight,
@@ -540,6 +568,18 @@ class _dynamic_formState extends State<dynamic_form> {
 
   Widget _buildDate(FormFieldEntity f, {double? labelMinHeight}) {
     final name = f.name!;
+
+    // 1. Khởi tạo controller nếu chưa có
+    _dateCtrls[name] = _dateCtrls[name] ?? TextEditingController();
+
+    // 2. Lấy giá trị default từ server
+    if (_dateValues[name] == null && f.value != null && f.value!.isNotEmpty) {
+      _dateValues[name] = DateTime.tryParse(f.value!);
+      if (_dateValues[name] != null) {
+        _dateCtrls[name]!.text = DateFormat('dd/MM/yyyy').format(_dateValues[name]!);
+      }
+    }
+
     return _wrapWithLabel(
       _labelWithRequired(f),
       SizedBox(
@@ -548,19 +588,20 @@ class _dynamic_formState extends State<dynamic_form> {
           onTap: () async {
             DateTime? picked = await showDatePicker(
               context: context,
-              initialDate: DateTime.now(),
+              initialDate: _dateValues[name] ?? DateTime.now(),
               firstDate: DateTime(1900),
               lastDate: DateTime(2100),
             );
-            if (picked != null) setState(() => _dateValues[name] = picked);
+            if (picked != null) {
+              setState(() {
+                _dateValues[name] = picked;
+                _dateCtrls[name]!.text = DateFormat('dd/MM/yyyy').format(picked);
+              });
+            }
           },
           child: IgnorePointer(
             child: TextField(
-              controller: TextEditingController(
-                text: _dateValues[name] != null
-                    ? DateFormat('dd/MM/yyyy').format(_dateValues[name]!)
-                    : '',
-              ),
+              controller: _dateCtrls[name],
               decoration: _inputDecoration(
                 null,
                 suffixIcon: Icon(Icons.calendar_today, size: 18, color: Colors.grey.shade600),
@@ -577,24 +618,29 @@ class _dynamic_formState extends State<dynamic_form> {
     );
   }
 
+
   Widget _buildDropdownLike({
     required FormFieldEntity f,
     required List<FormFieldOption> options,
     required String name,
     void Function(String?)? onChanged,
     double? labelMinHeight,
+    String? initialValue, // khai báo đúng type
   }) {
     return _wrapWithLabel(
       _labelWithRequired(f),
       SizedBox(
         height: 48,
         child: DropdownButtonFormField<String>(
-          value: _singleValues[name],
-          decoration: _inputDecoration(null), // đồng bộ border với text
+          value: _singleValues[name] ?? initialValue, // 🔥 fix chỗ này
+          decoration: _inputDecoration(null),
           items: options
               .map((opt) => DropdownMenuItem<String>(
             value: opt.value,
-            child: Text(opt.label ?? '', style: const TextStyle(fontSize: 14)),
+            child: Text(
+              opt.label ?? '',
+              style: const TextStyle(fontSize: 14),
+            ),
           ))
               .toList(),
           onChanged: (v) {
@@ -607,6 +653,7 @@ class _dynamic_formState extends State<dynamic_form> {
     );
   }
 
+
   Widget _buildSelect(FormFieldEntity f, {double? labelMinHeight}) {
     final name = f.name!;
     final List<FormFieldOption> options = f.options ?? const [];
@@ -616,7 +663,7 @@ class _dynamic_formState extends State<dynamic_form> {
       f: f,
       options: options,
       name: name,
-      labelMinHeight: labelMinHeight,
+      labelMinHeight: labelMinHeight, initialValue: null,
     );
 
     if ((nameSaveExtra ?? '').isNotEmpty && _isCurrentSelectionExtra(f)) {
@@ -764,6 +811,7 @@ class _dynamic_formState extends State<dynamic_form> {
           loadWards(selectedProvinceCode, name);
         }
       },
+      initialValue: null,
       labelMinHeight: labelMinHeight,
     );
   }
@@ -784,6 +832,7 @@ class _dynamic_formState extends State<dynamic_form> {
       f: f,
       name: name,
       options: f.options ?? [], // <-- dùng options riêng của field
+      initialValue: null,
       labelMinHeight: labelMinHeight,
     );
   }
@@ -964,16 +1013,23 @@ class _dynamic_formState extends State<dynamic_form> {
       case 'description':
         return _description(f.label ?? '');
       case 'gender':
+      // clone lại options từ entity
+        final options = List<FormFieldOption>.from(f.options ?? []);
+
+        // Thêm "Khác" nếu chưa có
+        if (!options.any((o) => o.value == 'other')) {
+          options.add(const FormFieldOption(value: 'other', label: 'Khác'));
+        }
+
         return _buildDropdownLike(
           f: f.copyWith(label: f.label ?? 'Giới tính'),
           name: f.name!,
-          options: const [
-            FormFieldOption(value: 'Nam', label: 'Nam'),
-            FormFieldOption(value: 'Nữ', label: 'Nữ'),
-            FormFieldOption(value: 'Khác', label: 'Khác'),
-          ],
+          options: options,
+          initialValue: f.value, // 🔥 đây mới là cái để hiển thị "Nam" khi f.value == "male"
           labelMinHeight: labelMinHeight,
         );
+
+
       default:
         return const SizedBox.shrink();
     }

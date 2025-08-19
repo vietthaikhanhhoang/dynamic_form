@@ -22,6 +22,8 @@ abstract class FormFieldEntity with _$FormFieldEntity {
     @JsonKey(name: 'row') int? row,
     @JsonKey(name: 'max') int? max,
 
+    @JsonKey(name: 'value') dynamic value,
+
     // 👇 Bổ sung field này
     @JsonKey(name: 'nameFieldDependent') String? nameFieldDependent,
   }) = _FormFieldEntity;
