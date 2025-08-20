@@ -1,11 +1,3 @@
-// camera_screen.dart
-// A single-screen Flutter camera with two modes:
-//  - QR mode: rectangular capture guide
-//  - CCCD mode: square capture guide
-// Features: flash toggle (off/auto/on/torch), front/back switch, capture button.
-// Returns captured XFile via Navigator.pop(context, XFile).
-
-import 'dart:async';
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -20,11 +12,13 @@ class SmartCameraScreen extends StatefulWidget {
     this.initialMode = CaptureMode.qr,
     this.enableFlashToggle = true,
     this.enableCameraSwitch = true,
+    this.saveToGallery = true,
   });
 
   final CaptureMode initialMode;
   final bool enableFlashToggle;
   final bool enableCameraSwitch;
+  final bool saveToGallery;
 
   @override
   State<SmartCameraScreen> createState() => _SmartCameraScreenState();
@@ -33,12 +27,12 @@ class SmartCameraScreen extends StatefulWidget {
 class _SmartCameraScreenState extends State<SmartCameraScreen>
     with WidgetsBindingObserver {
   CameraController? _controller;
-  List<CameraDescription> _cameras = const [];
-  int _cameraIndex = 0; // default to first found (usually back)
+  List<CameraDescription> _cameras = [];
+  int _cameraIndex = 0;
   FlashMode _flashMode = FlashMode.off;
   CaptureMode _mode = CaptureMode.qr;
-  bool _initializing = true;
   bool _isBusy = false;
+  bool _initializing = true;
   String? _error;
 
   @override
@@ -59,9 +53,7 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final controller = _controller;
-    if (controller == null || !controller.value.isInitialized) {
-      return;
-    }
+    if (controller == null || !controller.value.isInitialized) return;
     if (state == AppLifecycleState.inactive) {
       controller.dispose();
     } else if (state == AppLifecycleState.resumed) {
@@ -71,32 +63,21 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
 
   Future<void> _initCameras() async {
     try {
-      setState(() {
-        _initializing = true;
-        _error = null;
-      });
+      setState(() => _initializing = true);
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
-        setState(() {
-          _error = 'Không tìm thấy camera trên thiết bị.';
-        });
+        setState(() => _error = "Không tìm thấy camera.");
         return;
       }
       _cameras = cameras;
-
-      // Prefer back camera if present
-      final backIndex = cameras.indexWhere(
-            (c) => c.lensDirection == CameraLensDirection.back,
-      );
-      _cameraIndex = backIndex >= 0 ? backIndex : 0;
-
+      _cameraIndex = cameras.indexWhere(
+              (c) => c.lensDirection == CameraLensDirection.back);
+      if (_cameraIndex < 0) _cameraIndex = 0;
       await _startController(_cameras[_cameraIndex]);
     } catch (e) {
-      setState(() => _error = 'Lỗi khởi tạo camera: $e');
+      setState(() => _error = "Lỗi khởi tạo camera: $e");
     } finally {
-      if (mounted) {
-        setState(() => _initializing = false);
-      }
+      setState(() => _initializing = false);
     }
   }
 
@@ -106,7 +87,7 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
   }
 
   Future<void> _startController(CameraDescription description) async {
-    final previous = _controller;
+    final prev = _controller;
     _controller = CameraController(
       description,
       ResolutionPreset.max,
@@ -117,46 +98,22 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
       await _controller!.initialize();
       _flashMode = FlashMode.off;
       await _controller!.setFlashMode(_flashMode);
-    } on CameraException catch (e) {
-      setState(() =>
-      _error = 'CameraException: ${e.code} ${e.description ?? ''}');
+    } catch (e) {
+      setState(() => _error = 'CameraException: $e');
     } finally {
-      await previous?.dispose();
-      if (mounted) setState(() {});
+      await prev?.dispose();
+      setState(() {});
     }
   }
 
   Future<void> _toggleCamera() async {
-    if (_controller == null || !_controller!.value.isInitialized) return;
-
-    final cameras = await availableCameras();
-    if (cameras.isEmpty) return;
-
-    final lensDirection = _controller!.description.lensDirection;
-    CameraDescription newDescription;
-
-    if (lensDirection == CameraLensDirection.front) {
-      newDescription = cameras.firstWhere(
-            (c) => c.lensDirection == CameraLensDirection.back,
-        orElse: () => cameras.first,
-      );
-    } else {
-      newDescription = cameras.firstWhere(
-            (c) => c.lensDirection == CameraLensDirection.front,
-        orElse: () => cameras.first,
-      );
-    }
-
-    await _controller?.dispose();
-    _controller = CameraController(newDescription, ResolutionPreset.high);
-    await _controller?.initialize();
-    if (mounted) setState(() {});
+    if (_controller == null) return;
+    _cameraIndex = (_cameraIndex + 1) % _cameras.length;
+    await _startController(_cameras[_cameraIndex]);
   }
 
   Future<void> _cycleFlashMode() async {
-    final controller = _controller;
-    if (controller == null) return;
-
+    if (_controller == null) return;
     FlashMode next;
     switch (_flashMode) {
       case FlashMode.off:
@@ -172,17 +129,10 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
         next = FlashMode.off;
         break;
     }
-
     try {
-      await controller.setFlashMode(next);
+      await _controller!.setFlashMode(next);
       setState(() => _flashMode = next);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Không hỗ trợ chế độ flash này: $e')),
-        );
-      }
-    }
+    } catch (_) {}
   }
 
   Future<void> _capture() async {
@@ -191,89 +141,88 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
     setState(() => _isBusy = true);
 
     try {
-      // Chụp ảnh gốc
       final rawFile = await _controller!.takePicture();
       final bytes = await File(rawFile.path).readAsBytes();
-
-      // Decode ảnh
       final decoded = img.decodeImage(bytes);
       if (decoded == null) throw Exception("Không đọc được ảnh");
 
-      final width = decoded.width;
-      final height = decoded.height;
+      // Lấy size preview
+      final previewSize = _controller!.value.previewSize!;
+      final guideRect = _currentGuideRect(previewSize, _mode);
 
-      // Crop dựa vào tỉ lệ trung tâm (cố định)
-      late img.Image cropped;
-      if (_mode == CaptureMode.cccd) {
-        final rectWidth = (width * 0.9).toInt();
-        final rectHeight = (rectWidth * 2 ~/ 3);
-        final left = (width - rectWidth) ~/ 2;
-        final top = (height - rectHeight) ~/ 2;
-        cropped = img.copyCrop(decoded, left, top, rectWidth, rectHeight);
-      } else {
-        final size = (width * 0.8).toInt();
-        final left = (width - size) ~/ 2;
-        final top = (height - size) ~/ 2;
-        cropped = img.copyCrop(decoded, left, top, size, size);
-      }
+      // Crop ảnh theo guideRect
+      final cropped = _cropWithGuide(decoded, previewSize, guideRect);
 
-      // Lưu file crop
       final newPath = rawFile.path.replaceFirst(RegExp(r'\.jpg$'), '_cropped.jpg');
       final croppedFile = File(newPath);
       await croppedFile.writeAsBytes(img.encodeJpg(cropped));
 
-      // 💾 Lưu vào thư viện
-      await GallerySaver.saveImage(croppedFile.path, albumName: "MyAppPhotos");
+      if (widget.saveToGallery) {
+        await GallerySaver.saveImage(croppedFile.path, albumName: "MyAppPhotos");
+      }
 
       if (!mounted) return;
       Navigator.of(context).pop(XFile(croppedFile.path));
     } catch (e) {
       if (mounted) {
-        print('❌ Chụp/crop thất bại: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Chụp/crop thất bại: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('❌ Chụp/crop thất bại: $e')));
       }
     } finally {
       if (mounted) setState(() => _isBusy = false);
     }
   }
 
+// Tạo guideRect trên preview (theo mode)
+  Rect _currentGuideRect(Size previewSize, CaptureMode mode) {
+    final double padding = 24;
+    final double width = previewSize.width - padding * 2;
+
+    if (mode == CaptureMode.cccd) {
+      final rectWidth = width * 0.9;
+      final rectHeight = rectWidth * 0.6; // CCCD: chữ nhật
+      final left = (previewSize.width - rectWidth) / 2;
+      final top = (previewSize.height - rectHeight) / 2;
+      return Rect.fromLTWH(left, top, rectWidth, rectHeight);
+    } else {
+      final square = width * 0.8;
+      final left = (previewSize.width - square) / 2;
+      final top = (previewSize.height - square) / 2;
+      return Rect.fromLTWH(left, top, square, square);
+    }
+  }
+
+// Crop ảnh theo guideRect
+  img.Image _cropWithGuide(
+      img.Image original, Size previewSize, Rect guideRect) {
+    final scaleX = original.width / previewSize.width;
+    final scaleY = original.height / previewSize.height;
+
+    final left = (guideRect.left * scaleX).toInt();
+    final top = (guideRect.top * scaleY).toInt();
+    final width = (guideRect.width * scaleX).toInt();
+    final height = (guideRect.height * scaleY).toInt();
+
+    return img.copyCrop(original, left, top, width, height);
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
-    final isFrontCamera =
-        controller?.description.lensDirection == CameraLensDirection.front;
+    final isFront = controller?.description.lensDirection == CameraLensDirection.front;
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
         bottom: false,
         child: Stack(
-          fit: StackFit.expand,
           children: [
             if (_error != null)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(color: Colors.white),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              )
-            else if (_initializing ||
-                controller == null ||
-                !controller.value.isInitialized)
-              const Center(
-                child: CircularProgressIndicator(),
-              )
+              Center(child: Text(_error!, style: const TextStyle(color: Colors.white)))
+            else if (_initializing || controller == null || !controller.value.isInitialized)
+              const Center(child: CircularProgressIndicator())
             else
-              _CameraPreviewWithOverlay(
-                controller: controller,
-                mode: _mode,
-              ),
+              CameraPreviewWithOverlay(controller: controller!, mode: _mode),
 
             // Top bar
             Positioned(
@@ -282,35 +231,15 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
               right: 8,
               child: Row(
                 children: [
-                  _CircleButton(
-                    icon: Icons.arrow_back,
-                    onTap: () => Navigator.of(context).maybePop(),
-                    tooltip: 'Quay lại',
-                  ),
+                  _CircleButton(icon: Icons.arrow_back, onTap: () => Navigator.of(context).pop()),
                   const Spacer(),
                   SegmentedButton<CaptureMode>(
                     segments: const [
-                      ButtonSegment(
-                        value: CaptureMode.qr,
-                        label: Text('QR'),
-                        icon: Icon(Icons.qr_code_2),
-                      ),
-                      ButtonSegment(
-                        value: CaptureMode.cccd,
-                        label: Text('CCCD'),
-                        icon: Icon(Icons.credit_card),
-                      ),
+                      ButtonSegment(value: CaptureMode.qr, label: Text('QR'), icon: Icon(Icons.qr_code_2)),
+                      ButtonSegment(value: CaptureMode.cccd, label: Text('CCCD'), icon: Icon(Icons.credit_card)),
                     ],
                     selected: {_mode},
-                    onSelectionChanged: (s) {
-                      setState(() => _mode = s.first);
-                    },
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.all(
-                          Colors.black.withOpacity(0.4)),
-                      foregroundColor: WidgetStateProperty.all(Colors.white),
-                      overlayColor: WidgetStateProperty.all(Colors.white10),
-                    ),
+                    onSelectionChanged: (s) => setState(() => _mode = s.first),
                   ),
                 ],
               ),
@@ -318,34 +247,17 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
 
             // Bottom controls
             Positioned(
-              left: 0,
-              right: 0,
-              bottom: 24,
+              left: 0, right: 0, bottom: 24,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   if (widget.enableFlashToggle)
-                    _CircleButton(
-                      icon: _flashIcon(_flashMode),
-                      onTap: isFrontCamera ? null : _cycleFlashMode,
-                      tooltip: isFrontCamera
-                          ? 'Flash không khả dụng ở camera trước'
-                          : 'Flash: ${_flashLabel(_flashMode)}',
-                    )
+                    _CircleButton(icon: _flashIcon(_flashMode), onTap: isFront ? null : _cycleFlashMode)
                   else
                     const SizedBox(width: 56, height: 56),
-
-                  _ShutterButton(
-                    onTap: _capture,
-                    busy: _isBusy,
-                  ),
-
+                  _ShutterButton(onTap: _capture, busy: _isBusy),
                   if (widget.enableCameraSwitch && _cameras.length > 1)
-                    _CircleButton(
-                      icon: Icons.cameraswitch,
-                      onTap: _toggleCamera,
-                      tooltip: 'Đổi camera trước/sau',
-                    )
+                    _CircleButton(icon: Icons.cameraswitch, onTap: _toggleCamera)
                   else
                     const SizedBox(width: 56, height: 56),
                 ],
@@ -359,113 +271,95 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
 
   static IconData _flashIcon(FlashMode mode) {
     switch (mode) {
-      case FlashMode.off:
-        return Icons.flash_off;
-      case FlashMode.auto:
-        return Icons.flash_auto;
-      case FlashMode.always:
-        return Icons.flash_on;
-      case FlashMode.torch:
-        return Icons.flashlight_on;
-    }
-  }
-
-  static String _flashLabel(FlashMode mode) {
-    switch (mode) {
-      case FlashMode.off:
-        return 'Tắt';
-      case FlashMode.auto:
-        return 'Tự động';
-      case FlashMode.always:
-        return 'Bật';
-      case FlashMode.torch:
-        return 'Đèn pin';
+      case FlashMode.off: return Icons.flash_off;
+      case FlashMode.auto: return Icons.flash_auto;
+      case FlashMode.always: return Icons.flash_on;
+      case FlashMode.torch: return Icons.flashlight_on;
     }
   }
 }
 
-class _CameraPreviewWithOverlay extends StatelessWidget {
-  const _CameraPreviewWithOverlay({
-    required this.controller,
-    required this.mode,
-  });
-
+// ---------- UI Widgets ----------
+class CameraPreviewWithOverlay extends StatelessWidget {
+  const CameraPreviewWithOverlay({super.key, required this.controller, required this.mode});
   final CameraController controller;
   final CaptureMode mode;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            CameraPreview(controller),
-            CustomPaint(
-              painter: _CaptureGuidePainter(mode: mode),
-              size: Size(constraints.maxWidth, constraints.maxHeight),
+    final size = controller.value.previewSize!;
+    final previewRatio = size.height / size.width;
+
+    return Center(
+        child: ClipRect(
+            child: AspectRatio(
+                aspectRatio: previewRatio,
+                child: Stack(
+                    children: [
+                    CameraPreview(controller),
+                LayoutBuilder(
+                    builder: (context, constraints) {
+                      return CustomPaint(
+                        painter: CaptureGuidePainter(
+                          mode: mode,
+                          width: constraints.maxWidth,
+                          height: constraints.maxHeight,
+                        ),
+                      );
+                    },
+                ),
+                    ],
+                ),
             ),
-          ],
-        );
-      },
+        ),
     );
   }
 }
 
-class _CaptureGuidePainter extends CustomPainter {
-  _CaptureGuidePainter({required this.mode});
-
+class CaptureGuidePainter extends CustomPainter {
+  CaptureGuidePainter({required this.mode, required this.width, required this.height});
   final CaptureMode mode;
+  final double width;
+  final double height;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
-
-    final overlay = Paint()
+    final overlayPaint = Paint()
       ..color = Colors.black.withOpacity(0.5)
       ..style = PaintingStyle.fill;
 
-    final double padding = 24;
-    final double width = size.width - padding * 2;
-    Rect guideRect;
+    final borderPaint = Paint()
+      ..color = Colors.white70
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
 
+    Rect guideRect;
     if (mode == CaptureMode.cccd) {
-      final rectWidth = width * 0.9;
-      final rectHeight = rectWidth * 0.6;
-      final left = (size.width - rectWidth) / 2;
-      final top = (size.height - rectHeight) / 2;
-      guideRect = Rect.fromLTWH(left, top, rectWidth, rectHeight);
+      final w = width * 0.9;
+      final h = w * 2 / 3;
+      guideRect = Rect.fromLTWH((width - w) / 2, (height - h) / 2, w, h);
     } else {
-      final square = width * 0.8;
-      final left = (size.width - square) / 2;
-      final top = (size.height - square) / 2;
-      guideRect = Rect.fromLTWH(left, top, square, square);
+      final s = width * 0.8;
+      guideRect = Rect.fromLTWH((width - s) / 2, (height - s) / 2, s, s);
     }
 
-    final outer = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
-    final inner = Path()..addRRect(RRect.fromRectXY(guideRect, 16, 16));
+    // Overlay
+    final outer = Path()..addRect(Rect.fromLTWH(0, 0, width, height));
+    final inner = Path()..addRect(guideRect);
     final overlayPath = Path.combine(PathOperation.difference, outer, inner);
-    canvas.drawPath(overlayPath, overlay);
+    canvas.drawPath(overlayPath, overlayPaint);
 
-    final corner = 28.0;
+    // Border + corners
+    canvas.drawRect(guideRect, borderPaint);
+    const cornerLength = 28.0;
     final cornerPaint = Paint()
       ..color = Colors.white
-      ..strokeWidth = 5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..strokeWidth = 4
+      ..style = PaintingStyle.stroke;
 
-    canvas.drawRRect(
-        RRect.fromRectXY(guideRect, 16, 16),
-        paint
-          ..color = Colors.white70
-          ..strokeWidth = 2);
-
-    void drawCorner(double x, double y, bool horizontalRight, bool verticalDown) {
-      final dx = horizontalRight ? corner : -corner;
-      final dy = verticalDown ? corner : -corner;
+    void drawCorner(double x, double y, bool right, bool down) {
+      final dx = right ? cornerLength : -cornerLength;
+      final dy = down ? cornerLength : -cornerLength;
       canvas.drawLine(Offset(x, y), Offset(x + dx, y), cornerPaint);
       canvas.drawLine(Offset(x, y), Offset(x, y + dy), cornerPaint);
     }
@@ -475,39 +369,31 @@ class _CaptureGuidePainter extends CustomPainter {
     drawCorner(guideRect.left, guideRect.bottom, true, false);
     drawCorner(guideRect.right, guideRect.bottom, false, false);
 
-    final textPainter = TextPainter(
+    // Label
+    final tp = TextPainter(
       text: TextSpan(
         text: mode == CaptureMode.qr ? 'Căn QR trong khung' : 'Căn CCCD trong khung',
         style: const TextStyle(color: Colors.white, fontSize: 14),
       ),
       textDirection: TextDirection.ltr,
-    )..layout(maxWidth: size.width);
+    )..layout(maxWidth: width);
 
-    textPainter.paint(
-      canvas,
-      Offset((size.width - textPainter.width) / 2, guideRect.bottom + 12),
-    );
+    tp.paint(canvas, Offset((width - tp.width) / 2, guideRect.bottom + 12));
   }
 
   @override
-  bool shouldRepaint(covariant _CaptureGuidePainter oldDelegate) =>
-      oldDelegate.mode != mode;
+  bool shouldRepaint(covariant CaptureGuidePainter old) => old.mode != mode;
 }
 
+// ---------- Buttons ----------
 class _CircleButton extends StatelessWidget {
-  const _CircleButton({
-    required this.icon,
-    this.onTap,
-    this.tooltip,
-  });
-
+  const _CircleButton({required this.icon, this.onTap});
   final IconData icon;
-  final VoidCallback? onTap; // cho phép null để disable
-  final String? tooltip;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final btn = InkResponse(
+    return InkResponse(
       onTap: onTap,
       radius: 28,
       child: Container(
@@ -518,19 +404,14 @@ class _CircleButton extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white30),
         ),
-        child: Icon(
-          icon,
-          color: onTap == null ? Colors.white24 : Colors.white,
-        ),
+        child: Icon(icon, color: onTap == null ? Colors.white24 : Colors.white),
       ),
     );
-    return tooltip != null ? Tooltip(message: tooltip!, child: btn) : btn;
   }
 }
 
 class _ShutterButton extends StatelessWidget {
   const _ShutterButton({required this.onTap, required this.busy});
-
   final VoidCallback onTap;
   final bool busy;
 
