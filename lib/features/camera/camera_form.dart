@@ -240,8 +240,12 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
     return img.copyCrop(original, left, top, width, height);
   }
 
+  bool _isProcessingImage = false;
   Future<void> _processCameraImage(CameraImage image) async {
-    if (_mode != CaptureMode.qr) return; // <-- bỏ qua nếu đang CCCD
+    if (_mode != CaptureMode.qr) return; // Bỏ qua nếu không phải QR
+    if (_isProcessingImage) return;
+    _isProcessingImage = true;
+
     try {
       final WriteBuffer allBytes = WriteBuffer();
       for (final plane in image.planes) {
@@ -258,15 +262,11 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
               InputImageRotation.rotation0deg,
           inputImageFormat: InputImageFormatValue.fromRawValue(image.format.raw) ??
               InputImageFormat.nv21,
-          planeData: image.planes
-              .map(
-                (p) => InputImagePlaneMetadata(
-              bytesPerRow: p.bytesPerRow,
-              height: p.height,
-              width: p.width,
-            ),
-          )
-              .toList(),
+          planeData: image.planes.map((p) => InputImagePlaneMetadata(
+            bytesPerRow: p.bytesPerRow,
+            height: p.height,
+            width: p.width,
+          )).toList(),
         ),
       );
 
@@ -283,7 +283,11 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
         setState(() => _detectedQR = null);
       }
     } catch (_) {}
+    finally {
+      _isProcessingImage = false;
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -346,8 +350,12 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
                       ),
                     ],
                     selected: {_mode},
-                    onSelectionChanged: (s) => setState(() => _mode = s.first),
+                    onSelectionChanged: (s) => setState(() {
+                      _mode = s.first;
+                      _detectedQR = null; // <-- reset link QR khi đổi chế độ
+                    }),
                   ),
+
                 ],
               ),
             ),
@@ -501,7 +509,7 @@ class CaptureGuidePainter extends CustomPainter {
     tpLabel.paint(canvas, Offset((width - tpLabel.width) / 2, guideRect.bottom + 12));
 
     // QR link vàng
-    if (detectedQR != null && detectedQR!.displayValue != null) {
+    if (mode == CaptureMode.qr && detectedQR != null && detectedQR!.displayValue != null) {
       final tpLink = TextPainter(
         text: TextSpan(
           text: detectedQR!.displayValue!,
