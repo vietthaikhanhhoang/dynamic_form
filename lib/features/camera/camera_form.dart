@@ -87,27 +87,32 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
   }
 
   Future<void> _startController(CameraDescription description) async {
-    final prev = _controller;
+    // Dispose controller cũ
+    if (_controller != null) {
+      try {
+        await _controller!.dispose();
+      } catch (_) {}
+    }
+
     _controller = CameraController(
       description,
       ResolutionPreset.max,
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.jpeg,
     );
+
     try {
       await _controller!.initialize();
       _flashMode = FlashMode.off;
       await _controller!.setFlashMode(_flashMode);
+      if (mounted) setState(() {}); // cập nhật UI
     } catch (e) {
-      setState(() => _error = 'CameraException: $e');
-    } finally {
-      await prev?.dispose();
-      setState(() {});
+      if (mounted) setState(() => _error = 'Camera init lỗi: $e');
     }
   }
 
   Future<void> _toggleCamera() async {
-    if (_controller == null) return;
+    if (_cameras.length < 2) return; // Không có camera thứ 2
     _cameraIndex = (_cameraIndex + 1) % _cameras.length;
     await _startController(_cameras[_cameraIndex]);
   }
