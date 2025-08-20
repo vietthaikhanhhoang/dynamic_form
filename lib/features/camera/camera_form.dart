@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery_saver_plus/gallery_saver.dart';
 import 'package:image/image.dart' as img;
+import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 
 enum CaptureMode { qr, cccd }
 
@@ -35,18 +37,23 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
   bool _initializing = true;
   String? _error;
 
+  BarcodeScanner? _barcodeScanner;
+  Barcode? _detectedQR;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _mode = widget.initialMode;
     _initCameras();
+    _barcodeScanner = BarcodeScanner(formats: [BarcodeFormat.qrCode]);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
+    _barcodeScanner?.close();
     super.dispose();
   }
 
@@ -87,35 +94,57 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
   }
 
   Future<void> _startController(CameraDescription description) async {
-    // Dispose controller cũ
-    if (_controller != null) {
-      try {
-        await _controller!.dispose();
-      } catch (_) {}
-    }
-
+    final prev = _controller;
     _controller = CameraController(
       description,
-      ResolutionPreset.max,
+      ResolutionPreset.medium,
+      enableAudio: false,
+      imageFormatGroup: ImageFormatGroup.jpeg,
+    );
+    try {
+      await _controller!.initialize();
+      _flashMode = FlashMode.off;
+      await _controller!.setFlashMode(_flashMode);
+      _controller!.startImageStream(_processCameraImage);
+    } catch (e) {
+      setState(() => _error = 'CameraException: $e');
+    } finally {
+      await prev?.dispose();
+      setState(() {});
+    }
+  }
+
+  Future<void> _toggleCamera() async {
+    if (_cameras.isEmpty) return;
+
+    // Cập nhật index
+    _cameraIndex = (_cameraIndex + 1) % _cameras.length;
+
+    final oldController = _controller;
+    _controller = null; // tạm thời set null để tránh dùng controller cũ
+    await oldController?.dispose();
+
+    // Khởi tạo controller mới
+    _controller = CameraController(
+      _cameras[_cameraIndex],
+      ResolutionPreset.medium, // medium giúp tránh lag, vẫn OK với camera trước
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.jpeg,
     );
 
     try {
       await _controller!.initialize();
+
+      // reset flash
       _flashMode = FlashMode.off;
       await _controller!.setFlashMode(_flashMode);
-      if (mounted) setState(() {}); // cập nhật UI
+
+      if (mounted) setState(() {});
     } catch (e) {
-      if (mounted) setState(() => _error = 'Camera init lỗi: $e');
+      setState(() => _error = 'Switch camera failed: $e');
     }
   }
 
-  Future<void> _toggleCamera() async {
-    if (_cameras.length < 2) return; // Không có camera thứ 2
-    _cameraIndex = (_cameraIndex + 1) % _cameras.length;
-    await _startController(_cameras[_cameraIndex]);
-  }
 
   Future<void> _cycleFlashMode() async {
     if (_controller == null) return;
@@ -178,7 +207,7 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
     }
   }
 
-// Tạo guideRect trên preview (theo mode)
+  // Tạo guideRect trên preview (theo mode)
   Rect _currentGuideRect(Size previewSize, CaptureMode mode) {
     final double padding = 24;
     final double width = previewSize.width - padding * 2;
@@ -197,7 +226,7 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
     }
   }
 
-// Crop ảnh theo guideRect
+  // Crop ảnh theo guideRect
   img.Image _cropWithGuide(
       img.Image original, Size previewSize, Rect guideRect) {
     final scaleX = original.width / previewSize.width;
@@ -209,6 +238,51 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
     final height = (guideRect.height * scaleY).toInt();
 
     return img.copyCrop(original, left, top, width, height);
+  }
+
+  Future<void> _processCameraImage(CameraImage image) async {
+    if (_mode != CaptureMode.qr) return; // <-- bỏ qua nếu đang CCCD
+    try {
+      final WriteBuffer allBytes = WriteBuffer();
+      for (final plane in image.planes) {
+        allBytes.putUint8List(plane.bytes);
+      }
+      final bytes = allBytes.done().buffer.asUint8List();
+
+      final inputImage = InputImage.fromBytes(
+        bytes: bytes,
+        inputImageData: InputImageData(
+          size: Size(image.width.toDouble(), image.height.toDouble()),
+          imageRotation: InputImageRotationValue.fromRawValue(
+              _controller!.description.sensorOrientation) ??
+              InputImageRotation.rotation0deg,
+          inputImageFormat: InputImageFormatValue.fromRawValue(image.format.raw) ??
+              InputImageFormat.nv21,
+          planeData: image.planes
+              .map(
+                (p) => InputImagePlaneMetadata(
+              bytesPerRow: p.bytesPerRow,
+              height: p.height,
+              width: p.width,
+            ),
+          )
+              .toList(),
+        ),
+      );
+
+      final barcodes = await _barcodeScanner!.processImage(inputImage);
+
+      if (barcodes.isNotEmpty) {
+        final qr = barcodes.first;
+        if (qr.displayValue != null && qr.displayValue!.isNotEmpty) {
+          setState(() => _detectedQR = qr);
+        } else {
+          setState(() => _detectedQR = null);
+        }
+      } else {
+        setState(() => _detectedQR = null);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -227,7 +301,11 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
             else if (_initializing || controller == null || !controller.value.isInitialized)
               const Center(child: CircularProgressIndicator())
             else
-              CameraPreviewWithOverlay(controller: controller!, mode: _mode),
+              CameraPreviewWithOverlay(
+                controller: controller!,
+                mode: _mode,
+                detectedQR: _detectedQR,
+              ),
 
             // Top bar
             Positioned(
@@ -239,9 +317,33 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
                   _CircleButton(icon: Icons.arrow_back, onTap: () => Navigator.of(context).pop()),
                   const Spacer(),
                   SegmentedButton<CaptureMode>(
-                    segments: const [
-                      ButtonSegment(value: CaptureMode.qr, label: Text('QR'), icon: Icon(Icons.qr_code_2)),
-                      ButtonSegment(value: CaptureMode.cccd, label: Text('CCCD'), icon: Icon(Icons.credit_card)),
+                    segments: [
+                      ButtonSegment(
+                        value: CaptureMode.qr,
+                        label: Text(
+                          'QR',
+                          style: TextStyle(
+                            color: _mode == CaptureMode.qr ? Colors.white : Colors.white54,
+                          ),
+                        ),
+                        icon: Icon(
+                          Icons.qr_code_2,
+                          color: _mode == CaptureMode.qr ? Colors.white : Colors.white54,
+                        ),
+                      ),
+                      ButtonSegment(
+                        value: CaptureMode.cccd,
+                        label: Text(
+                          'CCCD',
+                          style: TextStyle(
+                            color: _mode == CaptureMode.cccd ? Colors.white : Colors.white54,
+                          ),
+                        ),
+                        icon: Icon(
+                          Icons.credit_card,
+                          color: _mode == CaptureMode.cccd ? Colors.white : Colors.white54,
+                        ),
+                      ),
                     ],
                     selected: {_mode},
                     onSelectionChanged: (s) => setState(() => _mode = s.first),
@@ -286,9 +388,15 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
 
 // ---------- UI Widgets ----------
 class CameraPreviewWithOverlay extends StatelessWidget {
-  const CameraPreviewWithOverlay({super.key, required this.controller, required this.mode});
+  const CameraPreviewWithOverlay({
+    super.key,
+    required this.controller,
+    required this.mode,
+    this.detectedQR,
+  });
   final CameraController controller;
   final CaptureMode mode;
+  final Barcode? detectedQR;
 
   @override
   Widget build(BuildContext context) {
@@ -296,36 +404,44 @@ class CameraPreviewWithOverlay extends StatelessWidget {
     final previewRatio = size.height / size.width;
 
     return Center(
-        child: ClipRect(
-            child: AspectRatio(
-                aspectRatio: previewRatio,
-                child: Stack(
-                    children: [
-                    CameraPreview(controller),
-                LayoutBuilder(
-                    builder: (context, constraints) {
-                      return CustomPaint(
-                        painter: CaptureGuidePainter(
-                          mode: mode,
-                          width: constraints.maxWidth,
-                          height: constraints.maxHeight,
-                        ),
-                      );
-                    },
-                ),
-                    ],
-                ),
-            ),
+      child: ClipRect(
+        child: AspectRatio(
+          aspectRatio: previewRatio,
+          child: Stack(
+            children: [
+              CameraPreview(controller),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  return CustomPaint(
+                    painter: CaptureGuidePainter(
+                      mode: mode,
+                      width: constraints.maxWidth,
+                      height: constraints.maxHeight,
+                      detectedQR: detectedQR,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
+      ),
     );
   }
 }
 
 class CaptureGuidePainter extends CustomPainter {
-  CaptureGuidePainter({required this.mode, required this.width, required this.height});
+  CaptureGuidePainter({
+    required this.mode,
+    required this.width,
+    required this.height,
+    this.detectedQR,
+  });
+
   final CaptureMode mode;
   final double width;
   final double height;
+  final Barcode? detectedQR;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -375,22 +491,34 @@ class CaptureGuidePainter extends CustomPainter {
     drawCorner(guideRect.right, guideRect.bottom, false, false);
 
     // Label
-    final tp = TextPainter(
+    final tpLabel = TextPainter(
       text: TextSpan(
         text: mode == CaptureMode.qr ? 'Căn QR trong khung' : 'Căn CCCD trong khung',
         style: const TextStyle(color: Colors.white, fontSize: 14),
       ),
       textDirection: TextDirection.ltr,
     )..layout(maxWidth: width);
+    tpLabel.paint(canvas, Offset((width - tpLabel.width) / 2, guideRect.bottom + 12));
 
-    tp.paint(canvas, Offset((width - tp.width) / 2, guideRect.bottom + 12));
+    // QR link vàng
+    if (detectedQR != null && detectedQR!.displayValue != null) {
+      final tpLink = TextPainter(
+        text: TextSpan(
+          text: detectedQR!.displayValue!,
+          style: const TextStyle(color: Colors.yellow, fontSize: 14, fontWeight: FontWeight.bold),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout(maxWidth: width - 16);
+      tpLink.paint(canvas, Offset((width - tpLink.width) / 2, guideRect.bottom + 28));
+    }
   }
 
   @override
-  bool shouldRepaint(covariant CaptureGuidePainter old) => old.mode != mode;
+  bool shouldRepaint(covariant CaptureGuidePainter oldDelegate) =>
+      oldDelegate.detectedQR != detectedQR;
 }
 
-// ---------- Buttons ----------
+// Circle button widget
 class _CircleButton extends StatelessWidget {
   const _CircleButton({required this.icon, this.onTap});
   final IconData icon;
@@ -398,23 +526,25 @@ class _CircleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkResponse(
+    return GestureDetector(
       onTap: onTap,
-      radius: 28,
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.35),
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white30),
+      child: Opacity(
+        opacity: onTap == null ? 0.3 : 1,
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.black45,
+          ),
+          child: Icon(icon, color: Colors.white),
         ),
-        child: Icon(icon, color: onTap == null ? Colors.white24 : Colors.white),
       ),
     );
   }
 }
 
+// Shutter button
 class _ShutterButton extends StatelessWidget {
   const _ShutterButton({required this.onTap, required this.busy});
   final VoidCallback onTap;
@@ -424,26 +554,13 @@ class _ShutterButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: busy ? null : onTap,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 76,
-            height: 76,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 6),
-            ),
-          ),
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: busy ? Colors.white30 : Colors.white,
-            ),
-          ),
-        ],
+      child: Container(
+        width: 72,
+        height: 72,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: busy ? Colors.grey : Colors.white,
+        ),
       ),
     );
   }

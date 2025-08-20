@@ -37,6 +37,7 @@ dependencies:
   charset_converter: ^2.3.0
   freezed_annotation: ^3.1.0
   json_annotation: ^4.9.0   # nên nâng cấp bản mới nhất
+  mobile_scanner: ^7.0.1
 
 dev_dependencies:
   flutter_test:
@@ -65,6 +66,7 @@ dev_dependencies:
   camera: ^0.10.6  # hoặc bản mới nhất
   gallery_saver_plus: ^3.2.8
   image: ^3.3.0
+  google_ml_kit: ^0.13.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
