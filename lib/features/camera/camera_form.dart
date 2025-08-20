@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:gallery_saver_plus/gallery_saver.dart';
 import 'package:image/image.dart' as img;
 import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 enum CaptureMode { qr, cccd }
-
 class SmartCameraScreen extends StatefulWidget {
   const SmartCameraScreen({
     super.key,
@@ -290,6 +290,7 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
 
 
   @override
+  @override
   Widget build(BuildContext context) {
     final controller = _controller;
     final isFront = controller?.description.lensDirection == CameraLensDirection.front;
@@ -309,6 +310,40 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
                 controller: controller!,
                 mode: _mode,
                 detectedQR: _detectedQR,
+              ),
+
+            // --- QR link clickable ---
+            if (_mode == CaptureMode.qr && _detectedQR != null && _detectedQR!.displayValue != null)
+              Positioned(
+                bottom: 160, // tăng thêm 20px so với trước
+                left: 16,
+                right: 16,
+                child: GestureDetector(
+                  onTap: () async {
+                    final url = _detectedQR!.displayValue!;
+                    // đảm bảo url hợp lệ trước khi mở
+                    final uri = Uri.tryParse(url);
+                    if (uri != null && await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _detectedQR!.displayValue!,
+                      style: const TextStyle(
+                        color: Colors.yellow,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
               ),
 
             // Top bar
@@ -352,10 +387,9 @@ class _SmartCameraScreenState extends State<SmartCameraScreen>
                     selected: {_mode},
                     onSelectionChanged: (s) => setState(() {
                       _mode = s.first;
-                      _detectedQR = null; // <-- reset link QR khi đổi chế độ
+                      _detectedQR = null; // reset link QR khi đổi chế độ
                     }),
                   ),
-
                 ],
               ),
             ),
@@ -508,17 +542,17 @@ class CaptureGuidePainter extends CustomPainter {
     )..layout(maxWidth: width);
     tpLabel.paint(canvas, Offset((width - tpLabel.width) / 2, guideRect.bottom + 12));
 
-    // QR link vàng
-    if (mode == CaptureMode.qr && detectedQR != null && detectedQR!.displayValue != null) {
-      final tpLink = TextPainter(
-        text: TextSpan(
-          text: detectedQR!.displayValue!,
-          style: const TextStyle(color: Colors.yellow, fontSize: 14, fontWeight: FontWeight.bold),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout(maxWidth: width - 16);
-      tpLink.paint(canvas, Offset((width - tpLink.width) / 2, guideRect.bottom + 28));
-    }
+    // // QR link vàng
+    // if (mode == CaptureMode.qr && detectedQR != null && detectedQR!.displayValue != null) {
+    //   final tpLink = TextPainter(
+    //     text: TextSpan(
+    //       text: detectedQR!.displayValue!,
+    //       style: const TextStyle(color: Colors.yellow, fontSize: 14, fontWeight: FontWeight.bold),
+    //     ),
+    //     textDirection: TextDirection.ltr,
+    //   )..layout(maxWidth: width - 16);
+    //   tpLink.paint(canvas, Offset((width - tpLink.width) / 2, guideRect.bottom + 28));
+    // }
   }
 
   @override
