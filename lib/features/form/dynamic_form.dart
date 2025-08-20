@@ -14,6 +14,7 @@ import 'package:dynamicform/features/ward/application/ward.api.dart';
 
 import 'package:dynamicform/features/form/application/form_request.api.dart';
 import 'package:dynamicform/features/form/domain/form_request.entity.dart';
+import '../camera/camera_form.dart';
 import 'domain/form_field.entity.dart';
 
 class dynamic_form extends StatefulWidget {
@@ -547,7 +548,7 @@ class _dynamic_formState extends State<dynamic_form> {
         : [];
 
     Future<void> _chooseSourceAndPick() async {
-      final source = await showModalBottomSheet<ImageSource>(
+      final source = await showModalBottomSheet<String>(
         context: context,
         builder: (context) => SafeArea(
           child: Wrap(
@@ -555,24 +556,50 @@ class _dynamic_formState extends State<dynamic_form> {
               ListTile(
                 leading: const Icon(Icons.camera_alt),
                 title: const Text('Chụp ảnh'),
-                onTap: () => Navigator.pop(context, ImageSource.camera),
+                onTap: () => Navigator.pop(context, 'camera'),
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
                 title: const Text('Chọn từ thư viện'),
-                onTap: () => Navigator.pop(context, ImageSource.gallery),
+                onTap: () => Navigator.pop(context, 'gallery'),
               ),
             ],
           ),
         ),
       );
 
-      if (source != null) {
-        final file = await _pickImageFrom(source);
+      if (source == null) return;
+
+      if (source == 'camera') {
+        // Mở màn hình camera custom của bạn
+        final XFile? file = await Navigator.of(context).push<XFile>(
+          MaterialPageRoute(
+            builder: (_) => SmartCameraScreen(
+              initialMode: CaptureMode.cccd, // hoặc CaptureMode.qr
+            ),
+          ),
+        );
+
+        if (file != null) {
+          setState(() {
+            _imageArrays[name]!.add(File(file.path));
+            // f.value chỉ giữ URL cũ
+            _formRequest = _formRequest?.copyWith(
+              data: _formRequest?.data?.map((field) {
+                if (field.name == name && field.type == 'image') {
+                  return field.copyWith(value: existingUrls);
+                }
+                return field;
+              }).toList(),
+            );
+          });
+        }
+      } else if (source == 'gallery') {
+        final file = await _pickImageFrom(ImageSource.gallery);
         if (file != null) {
           setState(() {
             _imageArrays[name]!.add(file);
-            // f.value chỉ giữ URL cũ, không gộp File vào
+            // f.value chỉ giữ URL cũ
             _formRequest = _formRequest?.copyWith(
               data: _formRequest?.data?.map((field) {
                 if (field.name == name && field.type == 'image') {
@@ -687,6 +714,7 @@ class _dynamic_formState extends State<dynamic_form> {
       ],
     );
   }
+
 
   // ====== BUILD FIELD (typed) ======
   // REPLACE _buildField

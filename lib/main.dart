@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'second_page.dart';
 import 'print_page.dart';
 import 'package:dynamicform/features/form/dynamic_form.dart';
-
+import 'package:dynamicform/features/camera/camera_form.dart';
 
 void main() {
   runApp(const MyApp());
@@ -60,6 +60,15 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  void _goToCameraPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SmartCameraScreen(initialMode: CaptureMode.qr),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -84,6 +93,11 @@ class _MyHomePageState extends State<MyHomePage> {
             ElevatedButton(
               onPressed: _goToDynamicFormPage,
               child: const Text("Go to DynamicForm Page"),
+            ),
+            const SizedBox(height: 16), // khoảng cách giữa 2 nút
+            ElevatedButton(
+              onPressed: _goToCameraPage,
+              child: const Text("Go to Camera Page"),
             ),
           ],
         ),
